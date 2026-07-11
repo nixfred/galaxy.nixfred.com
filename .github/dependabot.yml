@@ -2,33 +2,33 @@
 # Bun packages and GitHub Actions, one grouped PR each per week.
 version: 2
 updates:
-  - package-ecosystem: "bun"
-    directory: "/"
+  - package-ecosystem: 'bun'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "America/New_York"
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/New_York'
     groups:
       bun-dependencies:
         patterns:
-          - "*"
+          - '*'
     open-pull-requests-limit: 5
     labels:
-      - "dependencies"
+      - 'dependencies'
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "America/New_York"
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/New_York'
     groups:
       actions:
         patterns:
-          - "*"
+          - '*'
     open-pull-requests-limit: 5
     labels:
-      - "dependencies"
-      - "ci"
+      - 'dependencies'
+      - 'ci'

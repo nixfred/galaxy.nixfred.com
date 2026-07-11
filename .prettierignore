@@ -1,0 +1,7 @@
+dist/
+node_modules/
+bun.lock
+galaxy_requirements_pack/
+docs/
+*.md
+.astro/
