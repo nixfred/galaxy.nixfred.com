@@ -1,0 +1,80 @@
+{
+  "records": [
+    {
+      "slug": "meet-larry",
+      "anchor": true,
+      "weight": 1,
+      "status": "active",
+      "provenance": "fred",
+      "note": "Anchor star, decision F1, 2026-07-11."
+    },
+    {
+      "slug": "build-your-own-larry",
+      "anchor": true,
+      "weight": 1,
+      "status": "active",
+      "provenance": "fred",
+      "note": "Anchor star, decision F1, 2026-07-11."
+    },
+    {
+      "slug": "the-universe-as-i-see-it",
+      "anchor": true,
+      "weight": 1,
+      "status": "active",
+      "sectorOverride": "personal",
+      "provenance": "fred",
+      "note": "Anchor star, decision F1. Sector assignment for this Featured entry is Larry's inference: it is Fred's personal manuscript. Anchor status is Fred's."
+    },
+    {
+      "slug": "youtube-library",
+      "anchor": true,
+      "weight": 1,
+      "status": "evolving",
+      "provenance": "fred",
+      "note": "Anchor star, decision F1. Status evolving: the catalog grows continuously."
+    },
+    {
+      "slug": "sky-walrus",
+      "anchor": true,
+      "weight": 1,
+      "status": "active",
+      "provenance": "fred",
+      "note": "Anchor star, decision F1. Also the sole easter egg, decision F21."
+    },
+    {
+      "slug": "where-physics-starts-sweating",
+      "anchor": true,
+      "weight": 1,
+      "status": "active",
+      "provenance": "fred",
+      "note": "Anchor star, decision F1, 2026-07-11."
+    },
+    {
+      "slug": "the-code-audit",
+      "anchor": true,
+      "weight": 1,
+      "status": "active",
+      "provenance": "fred",
+      "note": "Anchor star, decision F1, 2026-07-11."
+    },
+    {
+      "slug": "ai-signal",
+      "weight": 0.85,
+      "status": "active",
+      "provenance": "fred",
+      "note": "Elevated brightness per Fred's F1 note; not one of the seven anchors."
+    },
+    {
+      "slug": "townhop",
+      "sectorOverride": "labs",
+      "provenance": "inferred",
+      "note": "Featured entry needs a home sector; Labs is Larry's inference pending Fred confirmation."
+    },
+    {
+      "slug": "the-life-of-ella-owen",
+      "status": "memorial",
+      "provenance": "inferred",
+      "note": "Memorial treatment per Q58 restraint rules; inferred from the public site's own framing."
+    }
+  ]
+}

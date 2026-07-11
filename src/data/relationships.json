@@ -1,0 +1,44 @@
+{
+  "edges": [
+    {
+      "source": "meet-larry",
+      "target": "build-your-own-larry",
+      "type": "built_on",
+      "strength": 1,
+      "reason": "The guide teaches the system the story introduces: Build Your Own Larry is built on the Larry described in Meet Larry.",
+      "provenance": "fred"
+    },
+    {
+      "source": "build-your-own-larry",
+      "target": "ai-infrastructure-portfolio",
+      "type": "shared_subject",
+      "strength": 1,
+      "reason": "The build guide's patterns are the working practice shown in the AI infrastructure portfolio.",
+      "provenance": "fred"
+    },
+    {
+      "source": "artemis-tracker",
+      "target": "where-physics-starts-sweating",
+      "type": "shared_subject",
+      "strength": 1,
+      "reason": "Live spaceflight tracking and the physics explainer form the space and physics constellation.",
+      "provenance": "fred"
+    },
+    {
+      "source": "the-nix-times",
+      "target": "intel",
+      "type": "shared_subject",
+      "strength": 1,
+      "reason": "The daily briefing and the AI news radar are two stages of one intelligence pipeline.",
+      "provenance": "fred"
+    },
+    {
+      "source": "intel",
+      "target": "ai-signal",
+      "type": "shared_subject",
+      "strength": 1,
+      "reason": "The radar feeds the signal tracker: both watch the AI landscape as one system.",
+      "provenance": "fred"
+    }
+  ]
+}

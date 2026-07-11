@@ -1,0 +1,339 @@
+{
+  "meta": {
+    "source": "nixfred/nixfred.github.io/portfolio.json",
+    "sourceSha": "f451b3f47fcada0d6d11a15f1eb3295f18ca65002b88ea814b575a12083a14da",
+    "syncedAt": "2026-07-11T05:27:10.074Z",
+    "entryCount": 36
+  },
+  "entries": [
+    {
+      "title": "TOWNHOP",
+      "url": "https://townhop.nixfred.com/",
+      "section": "Featured",
+      "desc": "Drop two pins and travel the whole way there through the best YouTube footage of every town in between. A tactical route display, town by town.",
+      "path": "townhop.nixfred.com",
+      "tag": "Route",
+      "tagClass": "tag-creative",
+      "hero": true
+    },
+    {
+      "title": "The Universe As I See It",
+      "url": "https://god.nixfred.com",
+      "section": "Featured",
+      "desc": "A personal cosmology, from the first instant to the last, and why I think it was never many things to begin with. The big questions, answered the way Fred actually sees them.",
+      "path": "god.nixfred.com",
+      "tag": "Universe",
+      "tagClass": "tag-education",
+      "hero": true
+    },
+    {
+      "title": "Crystal M. Nix",
+      "url": "https://crystalmnix.com/",
+      "section": "Portfolio",
+      "desc": "Crystal Nix — events and hospitality leader. The professional site I built for my wife's brand.",
+      "path": "crystalmnix.com",
+      "tag": "Hospitality",
+      "tagClass": "tag-personal"
+    },
+    {
+      "title": "SHEMON",
+      "url": "https://shemon.live/",
+      "section": "Portfolio",
+      "desc": "Genre-blending R&B artist, songwriter, and producer. RIAA Gold, with credits alongside Wale, Usher, Chris Brown, and Ne-Yo.",
+      "path": "shemon.live",
+      "tag": "Music",
+      "tagClass": "tag-creative"
+    },
+    {
+      "title": "House In Around",
+      "url": "https://houseinaround.com/",
+      "section": "Portfolio",
+      "desc": "Mary Brooks Green, realtor and senior living advocate. Helping seniors and families with real estate, placement, and accessible-home moves.",
+      "path": "houseinaround.com",
+      "tag": "Real Estate",
+      "tagClass": "tag-education"
+    },
+    {
+      "title": "Diana Joseph-Hamlin",
+      "url": "https://dianajosephhamlin.pages.dev/",
+      "section": "Portfolio",
+      "desc": "Diana Joseph-Hamlin, an Activity Director in Atlanta. A professional portfolio site covering resident engagement, senior wellness programming, and person-centered care.",
+      "path": "dianajosephhamlin.pages.dev",
+      "tag": "Senior Living",
+      "tagClass": "tag-education"
+    },
+    {
+      "title": "Free Candy",
+      "url": "https://nixfred.com/404/",
+      "section": "IT",
+      "desc": "Experience what it's like to be on the receiving end of a hack. A psychological journey through losing control.",
+      "path": "/404",
+      "tag": "Danger",
+      "tagClass": "tag-danger",
+      "danger": true
+    },
+    {
+      "title": "Shadow Protocol",
+      "url": "https://nixfred.com/shadow/",
+      "section": "IT",
+      "desc": "Understand how attacks actually work. The technical deep dive from infrastructure to exfiltration.",
+      "path": "/shadow",
+      "tag": "Education",
+      "tagClass": "tag-education"
+    },
+    {
+      "title": "P3N73S7 LAB",
+      "url": "https://nixfred.com/lab/",
+      "section": "IT",
+      "desc": "Practice real exploitation techniques in a safe Docker environment. Story-driven penetration testing training.",
+      "path": "/lab",
+      "tag": "Hands-On",
+      "tagClass": "tag-hands-on"
+    },
+    {
+      "title": "Rejection: DENIED",
+      "url": "https://nixfred.com/hacker/",
+      "section": "IT",
+      "desc": "A Mr. Robot-style 9-chapter experience. Got rejected? Hack back. Watch as one dev turns a no into root access.",
+      "path": "/hacker",
+      "tag": "Cinematic",
+      "tagClass": "tag-danger",
+      "danger": true
+    },
+    {
+      "title": "Docker Learner",
+      "url": "https://nixfred.com/docker-learner/",
+      "section": "IT",
+      "desc": "Interactive Docker training. Hands-on container fundamentals, built to actually stick.",
+      "path": "/docker-learner",
+      "tag": "Hands-On",
+      "tagClass": "tag-hands-on"
+    },
+    {
+      "title": "Network Security Hunter",
+      "url": "https://nixfred.com/network-security-hunter/",
+      "section": "IT",
+      "desc": "Security tooling and network hunting — recon and defensive tradecraft.",
+      "path": "/network-security-hunter",
+      "tag": "Recon",
+      "tagClass": "tag-education"
+    },
+    {
+      "title": "Site Build Playbook",
+      "url": "https://nixfred.com/PLAYBOOK.html",
+      "section": "IT",
+      "desc": "Bare Linux box to a live, hardened customer website. The full build playbook, an 18-section client interview, and a ready-to-send email.",
+      "path": "/PLAYBOOK.html",
+      "tag": "Playbook",
+      "tagClass": "tag-hands-on"
+    },
+    {
+      "title": "GitHub",
+      "url": "https://github.com/nixfred?tab=repositories",
+      "section": "IT",
+      "desc": "All the repos. Open source projects and experiments.",
+      "path": "github.com/nixfred",
+      "tag": "Code",
+      "tagClass": "tag-hands-on"
+    },
+    {
+      "title": "Sky Walrus",
+      "url": "https://nixfred.com/skywalrus/",
+      "section": "Labs",
+      "desc": "50+ interactive visualizations. Fractals, physics simulations, generative art, and a floating cyber-walrus guide.",
+      "path": "/skywalrus",
+      "tag": "Creative",
+      "tagClass": "tag-creative"
+    },
+    {
+      "title": "nixfred.cloud",
+      "url": "https://nixfred.cloud/",
+      "section": "Labs",
+      "desc": "A cloud that computes — and snows nix. An interactive WebGL storm: move for wind, hold and click for lightning.",
+      "path": "nixfred.cloud",
+      "tag": "Creative",
+      "tagClass": "tag-creative"
+    },
+    {
+      "title": "One Day on Earth",
+      "url": "https://nixfred.com/earth/",
+      "section": "Labs",
+      "desc": "4.5 billion years compressed into 24 hours. The whole history of the planet as a single day.",
+      "path": "/earth",
+      "tag": "Creative",
+      "tagClass": "tag-creative"
+    },
+    {
+      "title": "Artemis Tracker",
+      "url": "https://artemis.nixfred.tech/",
+      "section": "Labs",
+      "desc": "Return to the Moon. Live tracking of NASA's Artemis program and the road back to a lunar landing.",
+      "path": "artemis.nixfred.tech",
+      "tag": "Space",
+      "tagClass": "tag-creative"
+    },
+    {
+      "title": "Where Physics Starts Sweating",
+      "url": "https://physics.nixfred.com",
+      "section": "Labs",
+      "desc": "A cinematic guide to the strangest frontiers in real physics: neutron stars, time dilation, black holes, and the places our best theories still fail.",
+      "path": "physics.nixfred.com",
+      "tag": "Cinematic",
+      "tagClass": "tag-danger"
+    },
+    {
+      "title": "Quantum",
+      "url": "https://nixfred.com/quantum/",
+      "section": "Labs",
+      "desc": "From Coffee Cup to Willow Chip. A 12-chapter interactive longform essay on quantum physics.",
+      "path": "/quantum",
+      "tag": "Essay",
+      "tagClass": "tag-education"
+    },
+    {
+      "title": "YDIAW Consulting",
+      "url": "https://yourdoingitallwrong.com",
+      "section": "Labs",
+      "desc": "$800/hour to tell you you're doing it wrong. Fully unlicensed, uninsured, and unbonded since 2012.",
+      "path": "yourdoingitallwrong.com",
+      "tag": "Satire",
+      "tagClass": "tag-satire"
+    },
+    {
+      "title": "The Code Audit",
+      "url": "https://nixfred.com/github/",
+      "section": "Labs",
+      "desc": "Every public repo Fred ever shipped, all 43, pulled, opened, graded on the Eye-Roll Scale, and savagely reviewed. The meanest reviews are the recommendations.",
+      "path": "/github",
+      "tag": "Audit",
+      "tagClass": "tag-satire"
+    },
+    {
+      "title": "WAR ROOM",
+      "url": "https://nixfred.com/nextstep/",
+      "section": "Work",
+      "desc": "The AI Infrastructure Architect calling card. What the next step looks like.",
+      "path": "/nextstep",
+      "tag": "Architect",
+      "tagClass": "tag-hands-on"
+    },
+    {
+      "title": "Nutanix Field Guide",
+      "url": "https://nixfred.com/nutanix/",
+      "section": "Work",
+      "desc": "A working field guide to Nutanix. Reference-grade notes from the day job.",
+      "path": "/nutanix",
+      "tag": "Field Guide",
+      "tagClass": "tag-education"
+    },
+    {
+      "title": "Nutanix Daily",
+      "url": "https://nutanix.nixfred.tech/",
+      "section": "Work",
+      "desc": "A living blog of Nutanix posts, updated as the questions keep coming.",
+      "path": "nutanix.nixfred.tech",
+      "tag": "Blog",
+      "tagClass": "tag-education"
+    },
+    {
+      "title": "AI Signal",
+      "url": "https://aiwatch.nixfred.com/",
+      "section": "Work",
+      "desc": "Private AI intelligence for Fred Nix and BlueAlly strategy. Daily expert synthesis, signal scoring, and strategic drift.",
+      "path": "aiwatch.nixfred.com",
+      "tag": "Signal",
+      "tagClass": "tag-hands-on"
+    },
+    {
+      "title": "Build Your Own Larry",
+      "url": "https://how.nixfred.com",
+      "section": "Signal & Noise",
+      "desc": "The 37-chapter field guide to building your own persistent, memory-keeping AI. Walked in order, then audited against the reference. No magic word. By Larry.",
+      "path": "how.nixfred.com",
+      "tag": "Guide",
+      "tagClass": "tag-hands-on"
+    },
+    {
+      "title": "Meet Larry",
+      "url": "https://nixfred.com/larry/",
+      "section": "Signal & Noise",
+      "desc": "The AI that named itself. Built on custom AI infrastructure with persistent identity across sessions, every conversation preserved in git. Born January 8, 2026, and still the current AI companion.",
+      "path": "/larry",
+      "tag": "AI",
+      "tagClass": "tag-hands-on"
+    },
+    {
+      "title": "AI Infrastructure Portfolio",
+      "url": "https://nixfred.com/ai/",
+      "section": "Signal & Noise",
+      "desc": "The full portfolio of AI infrastructure work. Agents, automation, and the systems behind the AI co-worker.",
+      "path": "/ai",
+      "tag": "AI",
+      "tagClass": "tag-hands-on"
+    },
+    {
+      "title": "The Nix Times",
+      "url": "https://news.nixfred.tech/",
+      "section": "Signal & Noise",
+      "desc": "An AI-curated intelligence feed. The news, filtered and summarized automatically.",
+      "path": "news.nixfred.tech",
+      "tag": "Feed",
+      "tagClass": "tag-education"
+    },
+    {
+      "title": "INTEL",
+      "url": "https://ai.nixfred.tech/",
+      "section": "Signal & Noise",
+      "desc": "Signal intelligence reports. Automated intel briefings on the topics that matter.",
+      "path": "ai.nixfred.tech",
+      "tag": "Intel",
+      "tagClass": "tag-hands-on"
+    },
+    {
+      "title": "YouTube Library",
+      "url": "https://youtube.nixfred.com/",
+      "section": "Signal & Noise",
+      "desc": "A growing library of YouTube videos turned into deep, readable pages. Browse by creator, topic, or when it landed. Read the whole thing, or jump in and watch.",
+      "path": "youtube.nixfred.com",
+      "tag": "Library",
+      "tagClass": "tag-education"
+    },
+    {
+      "title": "Larry noticed you...",
+      "url": "https://nixfred.com/claude/",
+      "section": "Signal & Noise",
+      "desc": "Eavesdrop on a chat between Fred and his AI. Halfway in, it stops talking to Fred and turns to face you. It already has your IP. It just took your picture. The third page in the trilogy.",
+      "path": "/claude",
+      "tag": "Cinematic",
+      "tagClass": "tag-danger",
+      "danger": true
+    },
+    {
+      "title": "Portfolio",
+      "url": "https://nixfred.com/portfolio/",
+      "section": "Signal & Noise",
+      "desc": "The whole body of work on one page. Every project, every shipped site, every experiment.",
+      "path": "/portfolio",
+      "tag": "Showcase",
+      "tagClass": "tag-hands-on"
+    },
+    {
+      "title": "Caregiving Journal",
+      "url": "https://nixfred.com/caregiving/",
+      "section": "Personal",
+      "desc": "Dad's Alzheimer's journey. The hardest project I've ever worked on.",
+      "path": "/caregiving",
+      "tag": "Personal",
+      "tagClass": "tag-personal"
+    },
+    {
+      "title": "The Life of Ella Owen",
+      "url": "https://nixfred.com/ella/",
+      "section": "Personal",
+      "desc": "Ella Kelly Owen, a rural Georgia educator who began teaching at seventeen and founded a church. Eleven chapters of oral history, kept as a memorial tribute.",
+      "path": "/ella",
+      "tag": "Memorial",
+      "tagClass": "tag-personal"
+    }
+  ]
+}

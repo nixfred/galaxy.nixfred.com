@@ -6,7 +6,7 @@
       "@lib/*": ["src/lib/*"],
       "@data/*": ["src/data/*"]
     },
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals", "bun", "node"]
   },
   "include": ["src/**/*", "scripts/**/*", "tests/**/*"],
   "exclude": ["dist", "node_modules"]

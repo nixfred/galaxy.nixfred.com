@@ -1,0 +1,92 @@
+{
+  "tours": [
+    {
+      "id": "start-here",
+      "title": "Start Here",
+      "promise": "The five minute orientation: who builds this galaxy and why.",
+      "status": "draft",
+      "stops": [
+        {
+          "slug": "meet-larry",
+          "narration": "This is Larry, the AI collaborator behind much of what you are about to see."
+        },
+        {
+          "slug": "build-your-own-larry",
+          "narration": "The guide that lets anyone build their own. Several people already have."
+        },
+        {
+          "slug": "the-universe-as-i-see-it",
+          "narration": "The personal manuscript: how Fred sees the universe he is mapping."
+        },
+        {
+          "slug": "youtube-library",
+          "narration": "A growing library of videos rebuilt as deep, readable pages."
+        },
+        {
+          "slug": "sky-walrus",
+          "narration": "And the legend. Keep an eye on the far edge of the map."
+        }
+      ]
+    },
+    {
+      "id": "ai-and-infrastructure",
+      "title": "AI and Infrastructure",
+      "promise": "The AI systems and the architecture practice behind them.",
+      "status": "draft",
+      "stops": [
+        {
+          "slug": "meet-larry",
+          "narration": "The story of a persistent AI collaborator."
+        },
+        {
+          "slug": "ai-infrastructure-portfolio",
+          "narration": "The professional architecture practice in one place."
+        },
+        {
+          "slug": "build-your-own-larry",
+          "narration": "The patterns, packaged so others can build the same."
+        },
+        {
+          "slug": "the-nix-times",
+          "narration": "A daily intelligence briefing, produced automatically."
+        },
+        {
+          "slug": "intel",
+          "narration": "The AI news radar feeding the pipeline."
+        },
+        {
+          "slug": "ai-signal",
+          "narration": "And the signal tracker watching the landscape."
+        }
+      ]
+    },
+    {
+      "id": "space-and-physics",
+      "title": "Space and Physics",
+      "promise": "The widest spatial depth in the galaxy: rockets, physics, and Earth.",
+      "status": "draft",
+      "stops": [
+        {
+          "slug": "artemis-tracker",
+          "narration": "Live tracking for the Artemis program."
+        },
+        {
+          "slug": "where-physics-starts-sweating",
+          "narration": "Where the comfortable physics explanations stop working."
+        },
+        {
+          "slug": "one-day-on-earth",
+          "narration": "One day on Earth, seen properly."
+        },
+        {
+          "slug": "quantum",
+          "narration": "The quantum corner of the lab."
+        },
+        {
+          "slug": "sky-walrus",
+          "narration": "And above it all, the Sky Walrus."
+        }
+      ]
+    }
+  ]
+}

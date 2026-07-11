@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "source": "nixfred/nixfred.github.io/portfolio.json",
+    "sourceSha": "deadbeef",
+    "syncedAt": "2026-07-11T00:00:00.000Z",
+    "entryCount": 2
+  },
+  "entries": [
+    {
+      "title": "",
+      "url": "http://insecure.example.com",
+      "section": "IT",
+      "desc": "Empty title and non-https url must both fail validation."
+    },
+    {
+      "title": "Missing description",
+      "url": "https://example.com",
+      "section": "Labs"
+    }
+  ]
+}

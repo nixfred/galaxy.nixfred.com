@@ -1,0 +1,64 @@
+{
+  "sectors": [
+    {
+      "id": "it",
+      "label": "IT",
+      "mapLabel": "IT",
+      "colorToken": "sector-it",
+      "anchorPosition": { "x": 40, "y": 0, "z": 0 },
+      "order": 0,
+      "description": "Security, networking, and the sharper tools.",
+      "catalogSections": ["IT"]
+    },
+    {
+      "id": "labs",
+      "label": "Labs",
+      "mapLabel": "LABS",
+      "colorToken": "sector-labs",
+      "anchorPosition": { "x": 20, "y": 0, "z": 34.6 },
+      "order": 1,
+      "description": "Experiments, science, and the curious builds.",
+      "catalogSections": ["Labs"]
+    },
+    {
+      "id": "work",
+      "label": "Work",
+      "mapLabel": "WORK",
+      "colorToken": "sector-work",
+      "anchorPosition": { "x": -20, "y": 0, "z": 34.6 },
+      "order": 2,
+      "description": "Professional practice and field guides.",
+      "catalogSections": ["Work"]
+    },
+    {
+      "id": "signal",
+      "label": "Signal",
+      "mapLabel": "SIGNAL",
+      "colorToken": "sector-signal",
+      "anchorPosition": { "x": -40, "y": 0, "z": 0 },
+      "order": 3,
+      "description": "AI systems, intelligence, and the Larry lineage. Map label SIGNAL per decision F16; the catalog section is Signal & Noise.",
+      "catalogSections": ["Signal & Noise"]
+    },
+    {
+      "id": "clients",
+      "label": "Clients",
+      "mapLabel": "CLIENTS",
+      "colorToken": "sector-clients",
+      "anchorPosition": { "x": -20, "y": 0, "z": -34.6 },
+      "order": 4,
+      "description": "Commissioned work. Distinct, polished, grounded.",
+      "catalogSections": ["Portfolio"]
+    },
+    {
+      "id": "personal",
+      "label": "Personal",
+      "mapLabel": "PERSONAL",
+      "colorToken": "sector-personal",
+      "anchorPosition": { "x": 20, "y": 0, "z": -34.6 },
+      "order": 5,
+      "description": "Memory, family, and care. Quiet and protected.",
+      "catalogSections": ["Personal"]
+    }
+  ]
+}
