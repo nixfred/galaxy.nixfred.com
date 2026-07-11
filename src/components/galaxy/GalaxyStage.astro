@@ -92,6 +92,43 @@
     aria-hidden="true"
   >
   </p>
+
+  <aside
+    class="galaxy-panel"
+    id="galaxy-panel"
+    data-testid="galaxy-panel"
+    aria-labelledby="galaxy-panel-title"
+    hidden
+  >
+    <div class="galaxy-panel__grab" aria-hidden="true"></div>
+    <p class="mono-meta galaxy-panel__status" id="galaxy-panel-status"></p>
+    <h2 class="galaxy-panel__title" id="galaxy-panel-title"></h2>
+    <p class="galaxy-panel__desc" id="galaxy-panel-desc"></p>
+    <ul
+      class="galaxy-panel__related"
+      id="galaxy-panel-related"
+      aria-label="Related projects"
+    >
+    </ul>
+    <div class="galaxy-panel__actions">
+      <a
+        class="btn btn-primary"
+        id="galaxy-panel-open"
+        data-testid="panel-open-project"
+        target="_blank"
+        rel="noopener noreferrer">Open Project</a
+      >
+      <a class="btn btn-secondary" id="galaxy-panel-page" href="#"
+        >Project Page</a
+      >
+      <button
+        type="button"
+        class="btn btn-tertiary"
+        id="galaxy-panel-close"
+        data-testid="panel-close">Close</button
+      >
+    </div>
+  </aside>
 </div>
 
 <script>
@@ -99,6 +136,11 @@
     GalaxyController as GalaxyControllerType,
     MapState,
   } from '../../lib/graph/controller';
+  import {
+    readSlugFromUrl,
+    writeSlugToUrl,
+    onSlugPop,
+  } from '../../lib/state/deepLink';
 
   const stage = document.getElementById('galaxy-stage')!;
   const canvas = document.getElementById('galaxy-canvas') as HTMLCanvasElement;
@@ -113,6 +155,20 @@
   ) as HTMLButtonElement;
   const readout = document.getElementById('galaxy-readout')!;
   const labelHost = document.getElementById('galaxy-label-host')!;
+  const panel = document.getElementById('galaxy-panel')!;
+  const panelStatus = document.getElementById('galaxy-panel-status')!;
+  const panelTitle = document.getElementById('galaxy-panel-title')!;
+  const panelDesc = document.getElementById('galaxy-panel-desc')!;
+  const panelRelated = document.getElementById('galaxy-panel-related')!;
+  const panelOpen = document.getElementById(
+    'galaxy-panel-open',
+  ) as HTMLAnchorElement;
+  const panelPage = document.getElementById(
+    'galaxy-panel-page',
+  ) as HTMLAnchorElement;
+  const panelClose = document.getElementById(
+    'galaxy-panel-close',
+  ) as HTMLButtonElement;
 
   const reducedMotionQuery = window.matchMedia(
     '(prefers-reduced-motion: reduce)',
@@ -199,6 +255,7 @@
         onSelect: (change) => {
           readout.dataset.selected = change.slug ?? '';
           readout.textContent = change.slug ? `SELECTED // ${change.slug}` : '';
+          applySelection(change.slug);
         },
         onFallback: () => showFallback(),
       });
@@ -206,6 +263,126 @@
       showFallback();
     }
   }
+
+  // ------------------------------------------------------------------
+  // Selection panel, deep links, history, and keyboard (Phase 3b:
+  // FR015-FR022, AC015, AC016, AR003, AR004).
+  // ------------------------------------------------------------------
+  let lastInvoker: HTMLElement | null = null;
+  let suppressUrlWrite = false;
+
+  function applySelection(slug: string | null): void {
+    if (!suppressUrlWrite) writeSlugToUrl(slug);
+    if (!slug) {
+      if (!panel.hidden) {
+        panel.hidden = true;
+        // AR004: focus returns to the initiating control when the panel
+        // closes; the canvas region is not focusable, so fall back to the
+        // Atlas control which is always visible.
+        (
+          lastInvoker ??
+          document.querySelector<HTMLElement>(
+            '[data-testid="galaxy-atlas-link"]',
+          )
+        )?.focus();
+      }
+      return;
+    }
+    const node = controller?.getNode(slug);
+    if (!node) return;
+    const edges = controller?.getEdgesFor(slug) ?? [];
+
+    const statusParts = [`SECTOR: ${node.sector.toUpperCase()}`];
+    if (node.status) statusParts.push(`STATUS: ${node.status.toUpperCase()}`);
+    if (node.anchor) statusParts.push('ANCHOR');
+    statusParts.push(`REL: ${edges.length}`);
+    panelStatus.textContent = statusParts.join(' // ');
+    panelTitle.textContent = node.title;
+    panelDesc.textContent = node.desc;
+    panelOpen.href = node.url;
+    panelPage.href = `/project/${node.slug}/`;
+
+    panelRelated.textContent = '';
+    for (const edge of edges) {
+      const otherSlug = edge.source === slug ? edge.target : edge.source;
+      const other = controller?.getNode(otherSlug);
+      if (!other) continue;
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'galaxy-panel__related-link';
+      btn.textContent = other.title;
+      btn.addEventListener('click', () => controller?.select(otherSlug));
+      const reason = document.createElement('span');
+      reason.className = 'galaxy-panel__reason';
+      reason.textContent = edge.reason ?? '';
+      li.append(btn, reason);
+      panelRelated.append(li);
+    }
+
+    const wasHidden = panel.hidden;
+    panel.hidden = false;
+    if (wasHidden) {
+      lastInvoker = (document.activeElement as HTMLElement) ?? null;
+      // AR004: focus moves into the panel when it opens.
+      panelClose.focus();
+    }
+  }
+
+  panelClose.addEventListener('click', () => controller?.select(null));
+
+  // Deep link restore: applies after the scene reports online (AC016).
+  function applyUrlSelection(): void {
+    const slug = readSlugFromUrl();
+    suppressUrlWrite = true;
+    controller?.select(slug);
+    suppressUrlWrite = false;
+  }
+  onSlugPop(() => applyUrlSelection());
+
+  const onlineObserver = new MutationObserver(() => {
+    if (stage.dataset.mapState === 'online') {
+      onlineObserver.disconnect();
+      if (readSlugFromUrl()) applyUrlSelection();
+    }
+  });
+  onlineObserver.observe(stage, {
+    attributes: true,
+    attributeFilter: ['data-map-state'],
+  });
+
+  // Keyboard parity (AR003): arrows cycle stars, Enter confirms the cycled
+  // star, Escape deselects and returns to overview. Document-level so the
+  // aria-hidden canvas never needs to take focus; disabled while typing in
+  // an editable control or when the map is not online.
+  function editableTarget(t: EventTarget | null): boolean {
+    return (
+      t instanceof HTMLElement &&
+      (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
+    );
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (stage.dataset.mapState !== 'online' || !controller) return;
+    if (editableTarget(event.target)) return;
+    if (event.key === 'Escape') {
+      if (controller.getSelectedSlug()) {
+        event.preventDefault();
+        controller.select(null);
+      }
+      return;
+    }
+    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      event.preventDefault();
+      const order = controller.getKeyboardOrder();
+      if (!order.length) return;
+      const current = controller.getSelectedSlug();
+      const idx = current ? order.indexOf(current) : -1;
+      const step = event.key === 'ArrowRight' ? 1 : -1;
+      const next = order[(idx + step + order.length) % order.length]!;
+      controller.select(next);
+    }
+  });
 
   void boot();
 

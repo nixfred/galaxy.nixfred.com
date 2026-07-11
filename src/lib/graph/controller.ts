@@ -25,6 +25,7 @@ import type {
   SelectChange,
   FallbackReason,
   SceneNode,
+  SceneEdge,
 } from './types';
 
 export type MapState =
@@ -243,6 +244,44 @@ export class GalaxyController {
 
     this.cameraRig.focusOn(selected.position.x, selected.position.z, 28);
     if (this.reducedMotion) this.cameraRig.snapToGoal();
+  }
+
+  // Public selection API for the stage: deep links, keyboard navigation, and
+  // the detail panel all drive selection through here (FR015: pointer,
+  // keyboard, search, tour, and deep link actions can all select).
+  select(slug: string | null): void {
+    this.selection?.selectBySlug(slug);
+  }
+
+  getSelectedSlug(): string | null {
+    return this.selection?.getSelectedSlug() ?? null;
+  }
+
+  /** Ordered slugs for keyboard cycling: anchors first, then by title. */
+  getKeyboardOrder(): string[] {
+    if (!this.graph) return [];
+    return this.graph.nodes
+      .slice()
+      .sort((a, b) =>
+        a.anchor === b.anchor
+          ? a.title.localeCompare(b.title)
+          : a.anchor
+            ? -1
+            : 1,
+      )
+      .map((n) => n.slug);
+  }
+
+  getNode(slug: string): SceneNode | null {
+    if (!this.graph) return null;
+    return this.graph.nodes.find((n) => n.slug === slug) ?? null;
+  }
+
+  getEdgesFor(slug: string): SceneEdge[] {
+    if (!this.graph) return [];
+    return this.graph.edges.filter(
+      (e) => e.source === slug || e.target === slug,
+    );
   }
 
   private handleContextLost(): void {
