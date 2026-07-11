@@ -6,7 +6,8 @@
   --surface-2: #101018;
   --text-primary: #e8e8ec;
   --text-secondary: #9a9aa6;
-  --text-metadata: #6b6b78;
+  /* Quiet but readable (VR006): 4.5:1 minimum on surface-0, axe verified. */
+  --text-metadata: #83838f;
   --accent-interactive: #62d9e8;
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;

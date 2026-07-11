@@ -16,14 +16,15 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
-    baseURL: 'http://localhost:4321',
+    // Dedicated port: 4321 is contested by other local dev servers.
+    baseURL: 'http://localhost:4741',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: 'bunx astro preview --port 4321',
-    url: 'http://localhost:4321',
-    reuseExistingServer: !process.env.CI,
+    command: 'bunx astro preview --port 4741',
+    url: 'http://localhost:4741',
+    reuseExistingServer: false,
     timeout: 30_000,
   },
   projects: [
