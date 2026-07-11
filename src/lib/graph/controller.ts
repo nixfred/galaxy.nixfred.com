@@ -77,6 +77,7 @@ export class GalaxyController {
 
   private lastInputAt = 0;
   private disposed = false;
+  private filteredSlugs = new Set<string>();
 
   private readonly pointers = new Map<number, PointerState>();
   private dragButton: number | null = null;
@@ -227,23 +228,100 @@ export class GalaxyController {
     const selected = nodesBySlug.get(slug);
     if (!selected) return;
 
-    const relatedSlugs = new Set<string>([slug]);
-    for (const edge of this.graph.edges) {
-      if (edge.source === slug) relatedSlugs.add(edge.target);
-      if (edge.target === slug) relatedSlugs.add(edge.source);
-    }
-
-    this.starField.resetEnergyOverrides();
-    this.graph.nodes.forEach((node, index) => {
-      if (!relatedSlugs.has(node.slug)) {
-        // Unrelated stars fall back in brightness, never disappear
-        // (ART_DIRECTION.md "the project focus").
-        this.starField?.setEnergyOverride(index, 0.32);
-      }
-    });
+    this.recomputeEnergies();
 
     this.cameraRig.focusOn(selected.position.x, selected.position.z, 28);
     if (this.reducedMotion) this.cameraRig.snapToGoal();
+  }
+
+  // One composition point for star brightness: filtered stars fade to a
+  // whisper (fades communicate filtering), and with a selection active,
+  // unrelated visible stars fall back without disappearing (ART_DIRECTION
+  // "the project focus"). Selection dimming never resurrects filtered stars.
+  private recomputeEnergies(): void {
+    if (!this.starField || !this.graph) return;
+    this.starField.resetEnergyOverrides();
+    const selected = this.getSelectedSlug();
+    let related: Set<string> | null = null;
+    if (selected) {
+      related = new Set<string>([selected]);
+      for (const edge of this.graph.edges) {
+        if (edge.source === selected) related.add(edge.target);
+        if (edge.target === selected) related.add(edge.source);
+      }
+    }
+    this.graph.nodes.forEach((node, index) => {
+      if (this.filteredSlugs.has(node.slug)) {
+        this.starField?.setEnergyOverride(index, 0.04);
+        return;
+      }
+      if (related && !related.has(node.slug)) {
+        this.starField?.setEnergyOverride(index, 0.32);
+      }
+    });
+  }
+
+  /** Sector filter (FR028-FR031): isolate one or more sectors. Camera and
+   * selection are preserved unless the selection itself is hidden (FR029).
+   * Returns the visible project count for the FR030 count line. */
+  setSectorFilter(sectors: ReadonlySet<string> | null): number {
+    if (!this.graph) return 0;
+    const active = sectors && sectors.size ? sectors : null;
+    this.filteredSlugs = new Set(
+      active
+        ? this.graph.nodes
+            .filter((n) => !active.has(n.sector))
+            .map((n) => n.slug)
+        : [],
+    );
+    const mask = this.filteredSlugs.size ? this.filteredSlugs : null;
+    const selectedSlug = this.getSelectedSlug();
+    if (selectedSlug && this.filteredSlugs.has(selectedSlug)) {
+      this.select(null);
+    }
+    this.labels?.setFilteredOut(mask);
+    this.lines?.setFilteredOut(mask);
+    this.selection?.setPickPredicate(
+      (index) => !this.filteredSlugs.has(this.graph?.nodes[index]?.slug ?? ''),
+    );
+    this.recomputeEnergies();
+    return this.graph.nodes.length - this.filteredSlugs.size;
+  }
+
+  /** SURPRISE ME (FR059): a seeded session sequence over currently visible
+   * projects, avoiding everything already visited this session when
+   * possible. Exploration, not a slot machine. */
+  surpriseMe(): string | null {
+    if (!this.graph) return null;
+    const visible = this.graph.nodes
+      .map((n) => n.slug)
+      .filter((s) => !this.filteredSlugs.has(s));
+    if (!visible.length) return null;
+    const seenRaw = sessionStorage.getItem('galaxy-surprise-seen') ?? '[]';
+    const seen = new Set<string>(JSON.parse(seenRaw) as string[]);
+    let pool = visible.filter(
+      (s) => !seen.has(s) && s !== this.getSelectedSlug(),
+    );
+    if (!pool.length) {
+      sessionStorage.setItem('galaxy-surprise-seen', '[]');
+      pool = visible.filter((s) => s !== this.getSelectedSlug());
+    }
+    let seed = Number(sessionStorage.getItem('galaxy-surprise-seed'));
+    if (!Number.isFinite(seed) || seed === 0) {
+      seed = (Date.now() % 2147483647) | 1;
+    }
+    // mulberry32 step, persisted so the session sequence is deterministic.
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    const rand = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    sessionStorage.setItem('galaxy-surprise-seed', String(seed));
+    const pick = pool[Math.floor(rand * pool.length)]!;
+    seen.add(pick);
+    sessionStorage.setItem('galaxy-surprise-seen', JSON.stringify([...seen]));
+    this.select(pick);
+    return pick;
   }
 
   // Public selection API for the stage: deep links, keyboard navigation, and
@@ -257,11 +335,13 @@ export class GalaxyController {
     return this.selection?.getSelectedSlug() ?? null;
   }
 
-  /** Ordered slugs for keyboard cycling: anchors first, then by title. */
+  /** Ordered slugs for keyboard cycling: anchors first, then by title.
+   * Filtered-out stars are skipped (FR028 isolate semantics). */
   getKeyboardOrder(): string[] {
     if (!this.graph) return [];
     return this.graph.nodes
       .slice()
+      .filter((n) => !this.filteredSlugs.has(n.slug))
       .sort((a, b) =>
         a.anchor === b.anchor
           ? a.title.localeCompare(b.title)

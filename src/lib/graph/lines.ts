@@ -113,6 +113,7 @@ export interface RelationshipLines {
    * to clear on deselection. */
   setActiveNode: (slug: string | null) => void;
   setSignalsEnabled: (enabled: boolean) => void;
+  setFilteredOut: (slugs: Set<string> | null) => void;
   resize: (width: number, height: number) => void;
   dispose: () => void;
 }
@@ -202,6 +203,19 @@ export function buildRelationshipLines(
     setSignalsEnabled(enabled: boolean) {
       signalsEnabled = enabled;
       if (!enabled) for (const slot of signalPool) slot.mesh.visible = false;
+    },
+    setFilteredOut(slugs: Set<string> | null) {
+      // An edge with either endpoint filtered out disappears with it
+      // (FR028 isolate semantics; fades communicate filtering).
+      for (const b of built) {
+        b.line.visible =
+          !slugs || (!slugs.has(b.edge.source) && !slugs.has(b.edge.target));
+      }
+      if (slugs) {
+        activeEdges = activeEdges.filter(
+          (b) => !slugs.has(b.edge.source) && !slugs.has(b.edge.target),
+        );
+      }
     },
     update(_delta: number, elapsed: number) {
       if (!signalsEnabled || activeEdges.length === 0) {

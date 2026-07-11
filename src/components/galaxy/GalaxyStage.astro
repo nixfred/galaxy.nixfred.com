@@ -8,6 +8,13 @@
 // decoration (docs/ACCESSIBILITY.md section 6): the Atlas route and the
 // permanent ATLAS control here are the real accessible surface for the
 // catalog, not this component.
+import { sectorsSchema } from '@lib/catalog/schema';
+import sectorsRaw from '@data/sectors.json';
+
+const sectors = sectorsSchema
+  .parse(sectorsRaw)
+  .sectors.slice()
+  .sort((a, b) => a.order - b.order);
 ---
 
 <!--
@@ -66,6 +73,15 @@
   </div>
 
   <div class="galaxy-controls">
+    <button
+      type="button"
+      class="btn btn-secondary galaxy-surprise"
+      id="galaxy-surprise"
+      data-testid="galaxy-surprise"
+      hidden
+    >
+      Surprise Me
+    </button>
     <a
       class="btn btn-secondary galaxy-atlas-link"
       href="/atlas/"
@@ -83,6 +99,31 @@
     >
       Pause Motion
     </button>
+  </div>
+
+  <div
+    class="galaxy-filter-rail"
+    id="galaxy-filter-rail"
+    role="group"
+    aria-label="Filter the map by sector"
+    hidden
+  >
+    {
+      sectors.map((sector) => (
+        <button
+          type="button"
+          class="galaxy-filter"
+          data-map-filter={sector.id}
+          aria-pressed="false"
+        >
+          {sector.mapLabel}
+        </button>
+      ))
+    }
+    <span
+      class="mono-note galaxy-filter-count"
+      id="galaxy-filter-count"
+      data-testid="galaxy-filter-count"></span>
   </div>
 
   <p
@@ -246,7 +287,11 @@
           const item = bootStates.querySelector(`[data-state="${state}"]`);
           item?.classList.add('is-done');
           if (state === 'renderer-ready') pauseButton.hidden = false;
-          if (state === 'online') hideEntranceOverlay(false);
+          if (state === 'online') {
+            hideEntranceOverlay(false);
+            filterRail.hidden = false;
+            surpriseButton.hidden = false;
+          }
         },
         onHover: (change) => {
           if (change.slug) readout.textContent = `HOVER // ${change.slug}`;
@@ -330,6 +375,37 @@
   }
 
   panelClose.addEventListener('click', () => controller?.select(null));
+
+  // Sector filters (FR028-FR031): toggle buttons isolate sectors; the count
+  // line reports visible projects; camera and selection survive filtering
+  // unless the selection itself is hidden.
+  const filterRail = document.getElementById('galaxy-filter-rail')!;
+  const surpriseButton = document.getElementById(
+    'galaxy-surprise',
+  ) as HTMLButtonElement;
+  const filterCount = document.getElementById('galaxy-filter-count')!;
+  const activeSectors = new Set<string>();
+
+  filterRail.addEventListener('click', (event) => {
+    const btn = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      '[data-map-filter]',
+    );
+    if (!btn || !controller) return;
+    const sector = btn.dataset.mapFilter!;
+    if (activeSectors.has(sector)) activeSectors.delete(sector);
+    else activeSectors.add(sector);
+    btn.setAttribute('aria-pressed', String(activeSectors.has(sector)));
+    const visible = controller.setSectorFilter(
+      activeSectors.size ? activeSectors : null,
+    );
+    filterCount.textContent = activeSectors.size
+      ? `${visible} PROJECTS VISIBLE`
+      : '';
+  });
+
+  surpriseButton.addEventListener('click', () => {
+    controller?.surpriseMe();
+  });
 
   // Deep link restore: applies after the scene reports online (AC016).
   function applyUrlSelection(): void {

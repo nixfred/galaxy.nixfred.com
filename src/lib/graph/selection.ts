@@ -22,6 +22,7 @@ export interface SelectionController {
   poll: () => boolean;
   selectByIndex: (index: number | null) => void;
   selectBySlug: (slug: string | null) => void;
+  setPickPredicate: (fn: (index: number) => boolean) => void;
   getHoveredSlug: () => string | null;
   getSelectedSlug: () => string | null;
   onHoverChange: (cb: (change: HoverChange) => void) => () => void;
@@ -59,12 +60,18 @@ export function createSelectionController(
     for (const cb of selectListeners) cb(change);
   }
 
+  // Filtered-out nodes are unpickable (FR028 isolate semantics): the
+  // controller installs a predicate when sector filters are active.
+  let pickable: (index: number) => boolean = () => true;
+
   function raycastIndex(): number | null {
     raycaster.setFromCamera(ndc, camera);
     const hits = raycaster.intersectObject(hitProxies, false);
-    const first = hits[0];
-    if (!first || first.instanceId === undefined) return null;
-    return first.instanceId;
+    for (const hit of hits) {
+      if (hit.instanceId === undefined) continue;
+      if (pickable(hit.instanceId)) return hit.instanceId;
+    }
+    return null;
   }
 
   return {
@@ -104,6 +111,13 @@ export function createSelectionController(
       }
       const index = nodes.findIndex((n) => n.slug === slug);
       this.selectByIndex(index === -1 ? null : index);
+    },
+    setPickPredicate(fn: (index: number) => boolean) {
+      pickable = fn;
+      if (hoveredIndex !== null && !fn(hoveredIndex)) {
+        hoveredIndex = null;
+        emitHover();
+      }
     },
     getHoveredSlug: () => indexToSlug(hoveredIndex),
     getSelectedSlug: () => indexToSlug(selectedIndex),

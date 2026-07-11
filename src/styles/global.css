@@ -1024,3 +1024,49 @@ h1 {
     margin: 0 auto;
   }
 }
+
+/* Filter rail (FR028-FR031): surface-1 chrome strip, mono filter toggles. */
+.galaxy-filter-rail {
+  position: fixed;
+  bottom: 3.4rem;
+  left: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  z-index: 5;
+  pointer-events: auto;
+}
+
+.galaxy-filter-rail[hidden] {
+  display: none;
+}
+
+.galaxy-filter {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}
+
+.galaxy-filter:hover,
+.galaxy-filter:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--accent-signal);
+}
+
+.galaxy-filter[aria-pressed='true'] {
+  color: var(--surface-0);
+  background: var(--accent-signal);
+  border-color: var(--accent-signal);
+}
+
+.galaxy-filter-count {
+  margin-left: 0.5rem;
+}

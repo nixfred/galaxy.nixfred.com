@@ -19,6 +19,7 @@ export interface LabelLayer {
   container: HTMLDivElement;
   setHovered: (slug: string | null) => void;
   setSelected: (slug: string | null) => void;
+  setFilteredOut: (slugs: Set<string> | null) => void;
   update: (camera: PerspectiveCamera, width: number, height: number) => void;
   dispose: () => void;
 }
@@ -55,6 +56,7 @@ export function buildLabelLayer(nodes: SceneNode[]): LabelLayer {
 
   let hoveredSlug: string | null = null;
   let selectedSlug: string | null = null;
+  let filteredOut: Set<string> | null = null;
   const projected = new Vector3Impl();
   const occupied = new Set<string>();
 
@@ -66,9 +68,16 @@ export function buildLabelLayer(nodes: SceneNode[]): LabelLayer {
     setSelected(slug: string | null) {
       selectedSlug = slug;
     },
+    setFilteredOut(slugs: Set<string> | null) {
+      filteredOut = slugs;
+    },
     update(camera: PerspectiveCamera, width: number, height: number) {
       occupied.clear();
       for (const entry of entries) {
+        if (filteredOut?.has(entry.node.slug)) {
+          entry.el.style.display = 'none';
+          continue;
+        }
         const isAnchor = entry.node.anchor;
         const isHovered = entry.node.slug === hoveredSlug;
         const isSelected = entry.node.slug === selectedSlug;
