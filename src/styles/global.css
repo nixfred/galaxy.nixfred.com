@@ -1070,3 +1070,108 @@ h1 {
 .galaxy-filter-count {
   margin-left: 0.5rem;
 }
+
+/* Command palette (FR023-FR027): centered modal, instrument surface. */
+.galaxy-palette {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 12vh;
+  background: rgba(5, 7, 10, 0.72);
+  z-index: 40;
+  pointer-events: auto;
+}
+
+.galaxy-palette[hidden] {
+  display: none;
+}
+
+.galaxy-palette__box {
+  width: min(38rem, calc(100vw - 2rem));
+  background: var(--surface-2);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.galaxy-palette__input {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: none;
+  border-bottom: var(--stroke) solid var(--border);
+  padding: 0.85rem 1rem;
+}
+
+.galaxy-palette__input:focus-visible {
+  outline: none;
+}
+
+.galaxy-palette__results {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.galaxy-palette__result {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.galaxy-palette__result[aria-selected='true'] {
+  background: var(--surface-1);
+}
+
+.galaxy-palette__hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Guided tour bar (FR039-FR043): bottom sheet of narration + controls. */
+.galaxy-tour {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 3.4rem;
+  width: min(34rem, calc(100vw - 2rem));
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.85rem 1.1rem;
+  background: var(--surface-2);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--radius);
+  z-index: 12;
+  pointer-events: auto;
+}
+
+.galaxy-tour[hidden] {
+  display: none;
+}
+
+.galaxy-tour__narration {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.galaxy-tour__controls {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}

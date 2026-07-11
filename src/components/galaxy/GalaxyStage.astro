@@ -134,6 +134,67 @@ const sectors = sectorsSchema
   >
   </p>
 
+  <div
+    class="galaxy-tour"
+    id="galaxy-tour"
+    data-testid="galaxy-tour"
+    role="group"
+    aria-label="Guided tour"
+    hidden
+  >
+    <p class="mono-note galaxy-tour__meta" id="galaxy-tour-meta"></p>
+    <p class="galaxy-tour__narration" id="galaxy-tour-narration"></p>
+    <div class="galaxy-tour__controls">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        id="galaxy-tour-prev"
+        data-testid="tour-prev">Back</button
+      >
+      <button
+        type="button"
+        class="btn btn-primary"
+        id="galaxy-tour-next"
+        data-testid="tour-next">Next</button
+      >
+      <button
+        type="button"
+        class="btn btn-tertiary"
+        id="galaxy-tour-exit"
+        data-testid="tour-exit">Exit tour</button
+      >
+    </div>
+  </div>
+
+  <div
+    class="galaxy-palette"
+    id="galaxy-palette"
+    data-testid="galaxy-palette"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Command palette"
+    hidden
+  >
+    <div class="galaxy-palette__box">
+      <input
+        type="text"
+        class="galaxy-palette__input"
+        id="galaxy-palette-input"
+        data-testid="palette-input"
+        placeholder="Search projects, tours, commands..."
+        aria-label="Search projects, tours, and commands"
+        autocomplete="off"
+      />
+      <ul
+        class="galaxy-palette__results"
+        id="galaxy-palette-results"
+        role="listbox"
+        aria-label="Results"
+      >
+      </ul>
+    </div>
+  </div>
+
   <aside
     class="galaxy-panel"
     id="galaxy-panel"
@@ -302,6 +363,17 @@ const sectors = sectorsSchema
           readout.textContent = change.slug ? `SELECTED // ${change.slug}` : '';
           applySelection(change.slug);
         },
+        onTour: (state) => {
+          if (!state.tourId) {
+            tourBar.hidden = true;
+            return;
+          }
+          tourBar.hidden = false;
+          tourMeta.textContent = `${state.title} // STOP ${state.step + 1} OF ${state.total}`;
+          tourNarration.textContent = state.narration ?? '';
+          tourPrevBtn.disabled = state.step <= 0;
+          tourNextBtn.textContent = state.atEnd ? 'Finish' : 'Next';
+        },
         onFallback: () => showFallback(),
       });
     } catch {
@@ -407,6 +479,185 @@ const sectors = sectorsSchema
     controller?.surpriseMe();
   });
 
+  // ------------------------------------------------------------------
+  // Command palette (FR023-FR027): Cmd-K, Ctrl-K, and / open it; it
+  // searches projects, tours, and commands, and its own modal focus trap.
+  // ------------------------------------------------------------------
+  const palette = document.getElementById('galaxy-palette')!;
+  const paletteInput = document.getElementById(
+    'galaxy-palette-input',
+  ) as HTMLInputElement;
+  const paletteResults = document.getElementById('galaxy-palette-results')!;
+  let paletteInvoker: HTMLElement | null = null;
+  let paletteActive = -1;
+
+  interface PaletteItem {
+    label: string;
+    hint: string;
+    run: () => void;
+  }
+
+  function paletteCommands(): PaletteItem[] {
+    if (!controller) return [];
+    const items: PaletteItem[] = [];
+    for (const node of controller.listNodes()) {
+      items.push({
+        label: node.title,
+        hint: `PROJECT // ${node.sector.toUpperCase()}`,
+        run: () => controller?.select(node.slug),
+      });
+    }
+    for (const tour of controller.listTours()) {
+      items.push({
+        label: tour.title,
+        hint: 'TOUR',
+        run: () => startTour(tour.id),
+      });
+    }
+    items.push(
+      {
+        label: 'Open Atlas',
+        hint: 'COMMAND',
+        run: () => (location.href = '/atlas/'),
+      },
+      {
+        label: 'Surprise Me',
+        hint: 'COMMAND',
+        run: () => controller?.surpriseMe(),
+      },
+      {
+        label: 'Reset View',
+        hint: 'COMMAND',
+        run: () => controller?.select(null),
+      },
+    );
+    return items;
+  }
+
+  function renderPalette(query: string): void {
+    const q = query.trim().toLowerCase();
+    const all = paletteCommands();
+    const matches = (
+      q ? all.filter((i) => i.label.toLowerCase().includes(q)) : all
+    ).slice(0, 8);
+    paletteResults.textContent = '';
+    paletteActive = matches.length ? 0 : -1;
+    matches.forEach((item, i) => {
+      const li = document.createElement('li');
+      li.className = 'galaxy-palette__result';
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', String(i === paletteActive));
+      li.dataset.index = String(i);
+      const label = document.createElement('span');
+      label.textContent = item.label;
+      const hint = document.createElement('span');
+      hint.className = 'galaxy-palette__hint';
+      hint.textContent = item.hint;
+      li.append(label, hint);
+      li.addEventListener('click', () => {
+        item.run();
+        closePalette();
+      });
+      paletteResults.append(li);
+    });
+    (paletteResults as HTMLElement).dataset.count = String(matches.length);
+  }
+
+  function openPalette(): void {
+    if (stage.dataset.mapState !== 'online') return;
+    paletteInvoker = (document.activeElement as HTMLElement) ?? null;
+    palette.hidden = false;
+    paletteInput.value = '';
+    renderPalette('');
+    paletteInput.focus();
+  }
+
+  function closePalette(): void {
+    if (palette.hidden) return;
+    palette.hidden = true;
+    paletteInvoker?.focus();
+  }
+
+  paletteInput.addEventListener('input', () =>
+    renderPalette(paletteInput.value),
+  );
+
+  paletteInput.addEventListener('keydown', (event) => {
+    const options = Array.from(
+      paletteResults.querySelectorAll<HTMLElement>('[role="option"]'),
+    );
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      paletteActive = Math.min(paletteActive + 1, options.length - 1);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      paletteActive = Math.max(paletteActive - 1, 0);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      options[paletteActive]?.click();
+      return;
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      closePalette();
+      return;
+    } else {
+      return;
+    }
+    options.forEach((o, i) =>
+      o.setAttribute('aria-selected', String(i === paletteActive)),
+    );
+    options[paletteActive]?.scrollIntoView({ block: 'nearest' });
+  });
+
+  palette.addEventListener('click', (event) => {
+    if (event.target === palette) closePalette();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    const editing = editableTarget(event.target);
+    if (
+      (event.key === 'k' && (event.metaKey || event.ctrlKey)) ||
+      (event.key === '/' && !editing)
+    ) {
+      event.preventDefault();
+      if (palette.hidden) openPalette();
+      else closePalette();
+    }
+  });
+
+  // ------------------------------------------------------------------
+  // Guided tours (FR039-FR043).
+  // ------------------------------------------------------------------
+  const tourBar = document.getElementById('galaxy-tour')!;
+  const tourMeta = document.getElementById('galaxy-tour-meta')!;
+  const tourNarration = document.getElementById('galaxy-tour-narration')!;
+  const tourPrevBtn = document.getElementById(
+    'galaxy-tour-prev',
+  ) as HTMLButtonElement;
+  const tourNextBtn = document.getElementById(
+    'galaxy-tour-next',
+  ) as HTMLButtonElement;
+  const tourExitBtn = document.getElementById(
+    'galaxy-tour-exit',
+  ) as HTMLButtonElement;
+
+  function startTour(id: string): void {
+    closePalette();
+    const url = new URL(location.href);
+    url.searchParams.set('tour', id);
+    history.replaceState(history.state, '', url);
+    controller?.startTour(id);
+  }
+
+  tourPrevBtn.addEventListener('click', () => controller?.tourPrev());
+  tourNextBtn.addEventListener('click', () => controller?.tourNext());
+  tourExitBtn.addEventListener('click', () => {
+    controller?.tourExit();
+    const url = new URL(location.href);
+    url.searchParams.delete('tour');
+    history.replaceState(history.state, '', url);
+  });
+
   // Deep link restore: applies after the scene reports online (AC016).
   function applyUrlSelection(): void {
     const slug = readSlugFromUrl();
@@ -419,7 +670,14 @@ const sectors = sectorsSchema
   const onlineObserver = new MutationObserver(() => {
     if (stage.dataset.mapState === 'online') {
       onlineObserver.disconnect();
-      if (readSlugFromUrl()) applyUrlSelection();
+      // A tour deep link (?tour=) wins over a bare project link: it drives
+      // its own selection sequence (FR043 shareable tour state).
+      const tourId = new URLSearchParams(location.search).get('tour');
+      if (tourId && controller?.listTours().some((t) => t.id === tourId)) {
+        controller.startTour(tourId);
+      } else if (readSlugFromUrl()) {
+        applyUrlSelection();
+      }
     }
   });
   onlineObserver.observe(stage, {

@@ -26,6 +26,7 @@ import type {
   FallbackReason,
   SceneNode,
   SceneEdge,
+  SceneTour,
 } from './types';
 
 export type MapState =
@@ -38,6 +39,14 @@ export interface ControllerOptions {
   onHover: (change: HoverChange) => void;
   onSelect: (change: SelectChange) => void;
   onFallback: (reason: FallbackReason) => void;
+  onTour?: (state: {
+    tourId: string | null;
+    title: string | null;
+    step: number;
+    total: number;
+    narration: string | null;
+    atEnd: boolean;
+  }) => void;
 }
 
 const IGNITION_DURATION = 1.2; // seconds (BD22 envelope, ART_DIRECTION.md "the ignition")
@@ -78,6 +87,8 @@ export class GalaxyController {
   private lastInputAt = 0;
   private disposed = false;
   private filteredSlugs = new Set<string>();
+  private activeTour: SceneTour | null = null;
+  private tourStep = -1;
 
   private readonly pointers = new Map<number, PointerState>();
   private dragButton: number | null = null;
@@ -355,6 +366,72 @@ export class GalaxyController {
   getNode(slug: string): SceneNode | null {
     if (!this.graph) return null;
     return this.graph.nodes.find((n) => n.slug === slug) ?? null;
+  }
+
+  /** All nodes, for the command palette search index. */
+  listNodes(): SceneNode[] {
+    return this.graph?.nodes ?? [];
+  }
+
+  listTours(): SceneTour[] {
+    return this.graph?.tours ?? [];
+  }
+
+  // Guided tour runner (FR039-FR043). A tour is an ordered walk of selections
+  // with narration; the visitor can advance, go back, exit, and the state is
+  // observable so the stage can render controls and a shareable URL.
+  startTour(id: string): SceneTour | null {
+    const tour = this.graph?.tours.find((t) => t.id === id) ?? null;
+    if (!tour) return null;
+    this.activeTour = tour;
+    this.tourStep = -1;
+    this.tourNext();
+    return tour;
+  }
+
+  tourNext(): number {
+    if (!this.activeTour) return -1;
+    if (this.tourStep >= this.activeTour.stops.length - 1) {
+      return this.tourStep;
+    }
+    this.tourStep += 1;
+    this.select(this.activeTour.stops[this.tourStep]!.slug);
+    this.opts?.onTour?.(this.tourState());
+    return this.tourStep;
+  }
+
+  tourPrev(): number {
+    if (!this.activeTour || this.tourStep <= 0) return this.tourStep;
+    this.tourStep -= 1;
+    this.select(this.activeTour.stops[this.tourStep]!.slug);
+    this.opts?.onTour?.(this.tourState());
+    return this.tourStep;
+  }
+
+  tourExit(): void {
+    this.activeTour = null;
+    this.tourStep = -1;
+    this.opts?.onTour?.(this.tourState());
+  }
+
+  tourState(): {
+    tourId: string | null;
+    title: string | null;
+    step: number;
+    total: number;
+    narration: string | null;
+    atEnd: boolean;
+  } {
+    const t = this.activeTour;
+    const stop = t?.stops[this.tourStep];
+    return {
+      tourId: t?.id ?? null,
+      title: t?.title ?? null,
+      step: this.tourStep,
+      total: t?.stops.length ?? 0,
+      narration: stop?.narration ?? null,
+      atEnd: t ? this.tourStep >= t.stops.length - 1 : false,
+    };
   }
 
   getEdgesFor(slug: string): SceneEdge[] {

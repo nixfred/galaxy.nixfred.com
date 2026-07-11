@@ -11,11 +11,13 @@ import {
   enrichmentSchema,
   sectorsSchema,
   relationshipsSchema,
+  toursSchema,
 } from '@lib/catalog/schema';
 import snapshotRaw from '@data/portfolio.snapshot.json';
 import enrichmentRaw from '@data/galaxy.enrichment.json';
 import sectorsRaw from '@data/sectors.json';
 import relationshipsRaw from '@data/relationships.json';
+import toursRaw from '@data/tours.json';
 import type { GalaxyGraph } from '@lib/graph/types';
 
 export const prerender = true;
@@ -28,6 +30,14 @@ export const GET: APIRoute = () => {
     .sectors.slice()
     .sort((a, b) => a.order - b.order);
   const edges = relationshipsSchema.parse(relationshipsRaw).edges;
+  // Only tours whose stops all resolve to real slugs and that Fred marked
+  // ready ship to the client; validate-graph already gates references at CI.
+  const nodeSlugs = new Set(
+    mergeCatalog(snapshot, enrichment, sectors).nodes.map((n) => n.slug),
+  );
+  const tours = toursSchema
+    .parse(toursRaw)
+    .tours.filter((t) => t.stops.every((s) => nodeSlugs.has(s.slug)));
   const { nodes } = mergeCatalog(snapshot, enrichment, sectors);
   const positioned = layoutNodes(nodes, sectors);
 
@@ -54,6 +64,12 @@ export const GET: APIRoute = () => {
       colorToken: s.colorToken,
       anchorPosition: s.anchorPosition,
       order: s.order,
+    })),
+    tours: tours.map((t) => ({
+      id: t.id,
+      title: t.title,
+      promise: t.promise,
+      stops: t.stops.map((s) => ({ slug: s.slug, narration: s.narration })),
     })),
   };
 

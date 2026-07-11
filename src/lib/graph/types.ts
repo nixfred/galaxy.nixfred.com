@@ -41,12 +41,25 @@ export interface SceneEdge {
   provenance: string;
 }
 
+export interface SceneTourStop {
+  slug: string;
+  narration: string;
+}
+
+export interface SceneTour {
+  id: string;
+  title: string;
+  promise: string;
+  stops: SceneTourStop[];
+}
+
 export interface GalaxyGraph {
   catalogRevision: string;
   generatedAt: string;
   nodes: SceneNode[];
   edges: SceneEdge[];
   sectors: SceneSector[];
+  tours: SceneTour[];
 }
 
 // Adaptive quality (docs/warroom/02_WEBGL_CRAFT.md section 8, BD36-BD37).
