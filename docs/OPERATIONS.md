@@ -423,3 +423,7 @@ Zone identifiers recorded: `nixfred.com` `0f553c816de4c7f59d6dfbfe1712aafd`, `ni
 ### Incident note, 2026-07-11
 
 Commit `2b58258` accidentally included `.wrangler/cache/` files created by the Pages project creation, exposing the Cloudflare account identifier in public history. Assessment: the account identifier is not a credential, cannot be used to authenticate, and is treated as protected by convention only (`docs/CI_CD.md` 3.5); Cloudflare account IDs appear in dashboard URLs and are not rotatable. Action taken: `.wrangler/` removed from tracking and added to `.gitignore` in the immediate follow-up commit. No token, key, or secret value was exposed. Recorded per the `04` exposure procedure.
+
+### Provisioning addendum, 2026-07-11
+
+GitHub security suite enabled after the first Dependabot PR exposed that dependency graph was off (dependency-review-action failed environmental): dependency graph plus Dependabot alerts (`PUT /vulnerability-alerts`), secret scanning ENABLED, push protection ENABLED. Recorded here because scanning state is provisioning, not code.
