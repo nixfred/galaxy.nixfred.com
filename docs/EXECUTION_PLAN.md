@@ -158,7 +158,7 @@ GATE G6 (blocking checks):
 
 ## Standing rules across all phases
 
-1. Feature work happens on branches with pull requests and preview deployments; merge when green (interview Q65 to Q69).
+1. Trunk based development per decision F31: Larry commits and pushes directly to `main` at every meaningful step, with `production.yml` gated on that push's full `ci.yml` validation so a red push never deploys. The PR path with preview deployments stays wired for automated pull requests (Dependabot, sync-catalog) and future contributors (interview Q66 to Q69 as amended by F31).
 2. Every commit message is a searchable breadcrumb with full context.
 3. PENDING-FRED items in `docs/DECISIONS.md` resolve by their documented deadline phase or their safe fallback applies.
 4. Any requirement change is recorded in `docs/DECISIONS.md` before implementation.

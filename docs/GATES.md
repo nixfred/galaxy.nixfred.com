@@ -47,9 +47,9 @@ Columns: ID, requirement summary, enforcement mechanism, evidence artifact, clas
 | ID | Requirement | Enforcement mechanism | Evidence artifact | Class | Gate |
 |----|-------------|-----------------------|-------------------|-------|------|
 | FR001 | HTML shell before bundle loads | `tests/e2e/shell.spec.ts` pre hydration assertion | First viewport assertion log | BLOCK | G2 |
-| FR002 | Shell holds name, actions, links, status | `tests/e2e/shell.spec.ts` element presence | Shell element assertion log | BLOCK | G2 |
+| FR002 | Shell holds name, actions, links, status; permanent nixfred.com and GitHub repo links every mode and viewport (F33) | `tests/e2e/shell.spec.ts` element presence including both permanent links on every tested route | Shell element assertion log | BLOCK | G2 |
 | FR003 | Shell usable if bundle fails | `tests/e2e/shell.spec.ts`, `tests/e2e/webgl-fallback.spec.ts` | Fallback trace | BLOCK | G2 |
-| FR004 | Visible build revision in footer | `tests/e2e/shell.spec.ts` reads `build.json` value | Build revision assertion | BLOCK | G2 |
+| FR004 | Version visible at all times, every mode and viewport (F32) | `tests/e2e/shell.spec.ts` asserts the version element on every tested route and viewport and matches `build.json`; production smoke re-verifies against the deployed commit | Version visibility assertion | BLOCK | G2 |
 | FR005 | Constrained 2.5D Three.js map | `tests/e2e/explore.spec.ts` | Explore trace | BLOCK | G3 |
 | FR006 | Deterministic positions per revision | `tests/unit/layout-determinism.test.ts` | Coordinate hash equality | BLOCK | G1 |
 | FR007 | Stable sector anchors for six sectors | `scripts/validate-catalog.ts`, `tests/unit/layout-determinism.test.ts` | Sector schema and anchor log | BLOCK | G1 |

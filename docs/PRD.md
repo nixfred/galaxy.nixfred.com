@@ -167,7 +167,7 @@ FR002. The shell shall contain the site name, primary statement, Enter the Map a
 
 FR003. The shell shall remain usable if the visualization bundle fails.
 
-FR004. The site shall include a visible build revision in the footer or system panel.
+FR004. The site shall display a visible version number at all times, in every mode (map, Atlas, project pages, 404) and on every supported viewport. The displayed version is the release identifier (date plus short commit SHA) rendered from build metadata and consistent with `/build.json`. Hardened by decision F32.
 
 ### Galaxy map
 
