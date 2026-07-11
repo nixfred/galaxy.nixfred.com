@@ -121,7 +121,7 @@ Three distinct triggers lead to Atlas, and they are handled differently:
 
 1. Visitor chooses Atlas deliberately. A visible `ATLAS` control is always present in the shell (FR051); this is a normal navigation, no detection involved.
 2. WebGL cannot initialize at all. `GalaxyStage`'s bootstrap script feature detects a WebGL context before attempting the dynamic import. If detection fails, the import never happens, and the shell replaces the inert canvas region with the Atlas content inline, or navigates to `/atlas/` with the quiet message the interview specifies (FR052).
-3. WebGL initializes but later loses its context, or `renderer.ts` throws during setup. `controller.ts` catches both cases (a `webglcontextlost` listener and a try or catch around initialization) and performs the same fallback as case 2, which is what AC008's "recovers from a lost graphics context or presents the fallback" requires.
+3. WebGL initializes but later loses its context, or `renderer.ts` throws during setup. `controller.ts` catches both cases (a `webglcontextlost` listener and a try or catch around initialization) and performs the same fallback as case 2, which is what AC022's "recovers from a lost graphics context or presents the fallback" requires.
 
 Interview question 157 asks whether the text atlas should become the default on weak devices, or remain optional, and the interview pack does not supply a recommended default for that specific question. This document treats only outright WebGL failure (case 2 and case 3) as an automatic redirect. A proactive "this device is weak, defaulting you to Atlas even though WebGL technically works" behavior is not implemented until Fred decides; that is a PENDING-FRED item, tracked in section 11.
 

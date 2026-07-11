@@ -17,7 +17,7 @@ Work:
 1. Verify tooling: `gh auth status`, `wrangler whoami`, `git remote -v`, Bun installed.
 2. Create the GitHub repository `nixfred/galaxy.nixfred.com`, public, description and homepage set, default branch `main`, push the planning docs as the initial commits.
 3. Configure branch protection: all CI checks required, force pushes and deletion blocked, no outside reviewer required.
-4. Set repository secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` (minimally scoped token) and the non-secret variables per `docs/CI_CD.md`.
+4. Set repository secrets `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (minimally scoped token), and `CF_DNS_READ_TOKEN` (a separate Cloudflare token scoped to Zone:Zone:Read plus Zone:DNS:Read for the `nixfred.com` and `nixfred.tech` zones only, used solely by the DR011 domain census), plus the non-secret variables `CF_ZONE_NIXFRED_COM` and `CF_ZONE_NIXFRED_TECH` and the rest of the variables per `docs/CI_CD.md`.
 5. Create or reuse the Cloudflare Pages project `galaxy-nixfred-com`, production branch `main`.
 6. Configure Dependabot per `docs/CI_CD.md`.
 7. Record all provisioning results in `docs/OPERATIONS.md` completion notes.
@@ -25,7 +25,7 @@ Work:
 GATE G0 (blocking checks):
 1. Repository exists with correct visibility, description, default branch, and protection rules.
 2. `gh auth status` and `wrangler whoami` verified and recorded (no credentials in output captured).
-3. Secrets and variables present (names verified, values never echoed).
+3. Secrets and variables present, including the census token `CF_DNS_READ_TOKEN` and the zone variables `CF_ZONE_NIXFRED_COM` and `CF_ZONE_NIXFRED_TECH` (names verified, values never echoed).
 4. Pages project exists and reports the correct production branch.
 5. Planning docs committed and pushed; `git remote -v` recorded and confirmed pointing only at `nixfred/galaxy.nixfred.com`.
 
@@ -40,6 +40,7 @@ Work:
 4. Implement `scripts/` validators: data validation, graph validation, link check, bundle budget report, build info generation.
 5. Stand up `ci.yml` with the full blocking job set from `docs/CI_CD.md`, plus the preview and production workflows (production verification can only fully pass once the site exists; wire the skeleton now).
 6. Author the required `package.json` scripts (`check:all` runs everything CI runs).
+7. Wire an informational, non-blocking domain census run (`scripts/domain-census.ts`, DR011) from this phase forward, surfacing catalog coverage gaps early in the job summary. The blocking DR011 assertion stays at Gate G6 per `docs/GATES.md`.
 
 GATE G1 (blocking checks):
 1. `bun run check:all` passes locally from a clean clone.

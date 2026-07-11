@@ -335,7 +335,7 @@ DR009. Data synchronization shall produce a human readable change report.
 
 DR010. No production build shall fetch the catalog from the network at runtime.
 
-DR011. Total coverage. Every property reachable from the public internet at `*.nixfred.com`, `nixfred.com/*`, `*.nixfred.tech`, or `nixfred.tech/*` shall appear on the map, regardless of size. A domain census (Cloudflare zone DNS enumeration for both zones plus reachability probing, diffed against the galaxy catalog) shall run before launch and on the maintenance schedule. A live property missing from the map is a blocking launch gap, resolved by adding the entry upstream to `portfolio.json` (which remains the canonical identity source per DR001) or to the enrichment layer, never by a silent exception. Decision F3 in `docs/DECISIONS.md`, recorded 2026-07-11.
+DR011. Total coverage. Every property reachable from the public internet at `*.nixfred.com`, `nixfred.com/*`, `*.nixfred.tech`, or `nixfred.tech/*` shall appear on the map, regardless of size. A domain census (Cloudflare zone DNS enumeration for both zones plus reachability probing, diffed against the galaxy catalog) shall run before launch and on the maintenance schedule. A live property missing from the map is a blocking launch gap, resolved by adding the entry upstream to `portfolio.json` (which remains the canonical identity source per DR001) or to the enrichment layer, never by a silent exception. Census eligibility, output discipline, and the editorial exclusion mechanism are governed by ruling R9 in `docs/DECISIONS.md`. Decision F3 in `docs/DECISIONS.md`, recorded 2026-07-11.
 
 ## Visual requirements
 
@@ -482,4 +482,4 @@ IN007. Verify that the homepage card, command palette, and terminal navigation a
 
 ## Acceptance
 
-Acceptance is governed by the acceptance matrix (AC001 through AC058) recorded in the requirements pack and carried forward into `docs/TEST_PLAN.md` and `docs/RELEASE_CHECKLIST.md`. A requirement passes only with captured evidence. Build success alone is not evidence for browser behavior.
+Acceptance is governed by the acceptance matrix (AC001 through AC058) recorded in the requirements pack and carried forward into `docs/TEST_PLAN.md`, `docs/GATES.md`, and `docs/RELEASE_REPORT.md`. A requirement passes only with captured evidence. Build success alone is not evidence for browser behavior.

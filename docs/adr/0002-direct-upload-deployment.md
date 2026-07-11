@@ -10,7 +10,7 @@ Cloudflare Pages supports two deployment models: a git integration where Cloudfl
 
 ## Decision
 
-GitHub Actions builds and validates the artifact once in `ci.yml`, and that same artifact is what `preview.yml` and `deploy.yml` upload to Cloudflare Pages through Wrangler. Cloudflare's own git integration and its independent build step are not used.
+GitHub Actions builds and validates the artifact once in `ci.yml`, and that same artifact is what `preview.yml` and `production.yml` upload to Cloudflare Pages through Wrangler. Cloudflare's own git integration and its independent build step are not used.
 
 ## Consequences
 

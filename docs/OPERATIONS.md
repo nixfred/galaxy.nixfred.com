@@ -55,7 +55,7 @@ Branch protection can only be configured after `main` exists on the remote, whic
 
 ### 1.2 Configure branch protection
 
-`main` is the only production branch. Force pushes and deletion are prohibited. All CI checks must pass. Pull requests are required. No outside reviewer is required, matching `Q68`, `Q69`, and `Q132`. The required check context is the single aggregate `ci-status` job, so the required list stays stable as the test matrix evolves.
+`main` is the only production branch. Force pushes and deletion are prohibited. All CI checks must pass. Pull requests are required. No outside reviewer is required, matching `Q68`, `Q69`, and `D132`. The required check context is the single aggregate `ci-status` job, so the required list stays stable as the test matrix evolves.
 
 ```bash
 gh api -X PUT repos/nixfred/galaxy.nixfred.com/branches/main/protection \
@@ -361,7 +361,7 @@ bun run data:validate                                        # catalog schema
 
 ## 7. Preview cleanup policy
 
-Preview deployments are isolated, noindexed `*.pages.dev` deployments created per pull request commit. Cloudflare retains them automatically. Policy for version one (`Q135` left this open, this is the working default recorded in `docs/DECISIONS.md`):
+Preview deployments are isolated, noindexed `*.pages.dev` deployments created per pull request commit. Cloudflare retains them automatically. Policy for version one (`D135` left this open, this is the working default recorded in `docs/DECISIONS.md`):
 
 1. Previews are not deleted on every PR close, because they are cheap, noindexed, and useful for post merge reference.
 2. A periodic cleanup removes preview deployments older than 30 days, keeping the production history intact. Never delete a production deployment, it may be a rollback target (`AC051`).
@@ -380,7 +380,9 @@ Confirm the target's environment is `preview` before deleting. The rollback inve
 
 Total coverage (DR011, decision F3): every property reachable at `*.nixfred.com`, `nixfred.com/*`, `*.nixfred.tech`, or `nixfred.tech/*` must appear on the map. The census enforces this.
 
-How it runs. `scripts/domain-census.ts` enumerates the Cloudflare zone DNS records for both zones, `nixfred.com` and `nixfred.tech`, through the Cloudflare API, probes each resulting hostname for reachability, and diffs the reachable set against the merged galaxy catalog. Every live property with no corresponding node is reported as a coverage gap. The census reads DNS only, so it uses a read only Zone DNS Read token for both zones, never the Pages Edit deploy token.
+How it runs. `scripts/domain-census.ts` enumerates the Cloudflare zone DNS records for both zones, `nixfred.com` and `nixfred.tech`, through the Cloudflare API, probes each resulting hostname for reachability, and diffs the reachable set against the merged galaxy catalog. The census reads DNS only, so it uses a read only Zone DNS Read token for both zones, never the Pages Edit deploy token.
+
+Privacy scoping (ruling R9 in `docs/DECISIONS.md`). Raw zone enumeration output never leaves the workflow run: it is never committed, never uploaded as an artifact, never printed to logs, and never included in an issue body. A hostname or path is census-eligible only if it serves public HTML over HTTPS with an HTTP 200 response. DNS records that are not public websites (mail, TXT, service CNAMEs, API endpoints, tooling, anything failing the eligibility check) appear in outputs only as aggregate counts, never by name. Every census-eligible live property with no corresponding node is reported as a coverage gap; the public census report and any tracking issue may name only census-eligible gaps. An editorial exclusion file `src/data/census-exclusions.json` may exclude a census-eligible public website from the map requirement, each entry carrying a reason, limited to already-public websites, and auditable rather than silent.
 
 ```bash
 # Enumerate DNS records for both zones, read only
@@ -394,4 +396,4 @@ bun run data:census
 
 When it runs. Before the initial public launch the census is a blocking gate: it must report zero uncovered live properties before launch (`docs/GATES.md`, `docs/CI_CD.md`). After launch it runs on the maintenance schedule inside `scheduled_checks.yml` (`docs/CI_CD.md` section 4.5), which opens a tracking issue on any gap.
 
-What to do with a gap. A live property missing from the map is resolved by adding the entry upstream to `portfolio.json` in `nixfred/nixfred.github.io` (the canonical identity source per `DR001`), or, when the property is Galaxy specific, to the enrichment layer `src/data/galaxy.enrichment.json`. Never wave a gap through with a silent exception. An upstream addition flows back into Galaxy through the normal catalog sync (section 4); an enrichment addition ships through a normal pull request. Re-run the census after the change and confirm the gap is cleared before closing the tracking issue.
+What to do with a gap. A census-eligible live property missing from the map is resolved by adding the entry upstream to `portfolio.json` in `nixfred/nixfred.github.io` (the canonical identity source per `DR001`), or, when the property is Galaxy specific, to the enrichment layer `src/data/galaxy.enrichment.json`. Never wave a gap through with a silent exception; an editorial exclusion for an already-public, census-eligible property goes through `src/data/census-exclusions.json` with a recorded reason instead, per R9. An upstream addition flows back into Galaxy through the normal catalog sync (section 4); an enrichment or exclusion addition ships through a normal pull request. Re-run the census after the change and confirm the gap is cleared before closing the tracking issue.

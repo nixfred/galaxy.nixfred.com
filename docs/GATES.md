@@ -1,6 +1,6 @@
 # NIXFRED GALAXY Gates and Traceability Matrix
 
-Status: Binding. Updated 2026-07-11 to incorporate `docs/DECISIONS.md` Part 5 (Fred session rulings F1 through F29) and the new requirement DR011. This file is the single traceability matrix for `galaxy.nixfred.com`. Every requirement in the requirements pack maps to exactly one row here, every row names the mechanism that proves it, the evidence that mechanism produces, the enforcement class, and the phase gate where it must first pass. A requirement without a passing gate is not done. Build success alone is never evidence for browser behavior.
+Status: Binding. Updated 2026-07-11 to incorporate `docs/DECISIONS.md` Part 5 (Fred session rulings F1 through F30) and the new requirement DR011. This file is the single traceability matrix for `galaxy.nixfred.com`. Every requirement in the requirements pack maps to exactly one row here, every row names the mechanism that proves it, the evidence that mechanism produces, the enforcement class, and the phase gate where it must first pass. A requirement without a passing gate is not done. Build success alone is never evidence for browser behavior.
 
 This file integrates and does not re-invent. Where `docs/TEST_PLAN.md` assigned an acceptance criterion a class and mechanism, this file uses exactly that. Where `docs/CI_CD.md` mapped a job to requirement IDs, this file uses exactly those jobs. Genuine contradictions between the source documents are resolved in the matrix and listed in the RECONCILIATIONS section at the end.
 
@@ -67,7 +67,7 @@ Columns: ID, requirement summary, enforcement mechanism, evidence artifact, clas
 | FR019 | Detail view shows required fields | `tests/e2e/explore.spec.ts` field assertions | Panel field assertion log | BLOCK | G3 |
 | FR020 | Selection updates stable history URL | `tests/unit/deep-link.test.ts`, `tests/e2e/deep-links.spec.ts` | URL state test output | BLOCK | G3 |
 | FR021 | Close restores context, session camera memory | `tests/e2e/keyboard.spec.ts` focus return, `explore.spec.ts` session camera restore (F20) | Focus return and camera restore trace | BLOCK | G3 |
-| FR022 | Double click opens external, new tab, safe attrs | `scripts/validate-catalog.ts`, `tests/e2e/explore.spec.ts` double click and rel and target (F19) | Link attribute and double click assertion | BLOCK | G2 |
+| FR022 | Double click opens external, new tab, safe attrs | `tests/e2e/explore.spec.ts` double click and rel and target (F19) behavior test; the link safety attribute half (HTTPS, rel attributes) is already proven at G2 by `scripts/validate-catalog.ts` under AC005 | Link attribute and double click assertion | BLOCK | G3 |
 | FR023 | Palette opens on the three shortcuts | `tests/e2e/search.spec.ts` shortcut coverage | Shortcut coverage log | BLOCK | G2 |
 | FR024 | Search matches all indexed fields | `tests/e2e/search.spec.ts`, `tests/unit/filters.test.ts` | Search field coverage log | BLOCK | G2 |
 | FR025 | Results keyboard and screen reader ready | `tests/e2e/keyboard.spec.ts`, `search.spec.ts` | Keyboard result trace | BLOCK | G2 |
@@ -126,9 +126,9 @@ Columns: ID, requirement summary, enforcement mechanism, evidence artifact, clas
 | DR008 | Bad data fails CI | `catalog-invalid.json` fixture, `validate-catalog.ts`, `validate-graph.ts` | Negative validation output | BLOCK | G1 |
 | DR009 | Sync produces readable change report | `scripts/sync-catalog.ts`, `tests/unit/catalog-merge.test.ts` | Change report fixture output | BLOCK | G1 |
 | DR010 | No runtime catalog fetch in production | `tests/fixtures` offline suite, build, source review | Offline test and network trace | BLOCK | G1 |
-| DR011 | Every reachable nixfred property on the map | `scripts/domain-census.ts` Cloudflare zone DNS enumeration of both zones plus reachability probe, diffed against the catalog, at launch and in `scheduled_checks.yml` | Domain census report artifact | BLOCK | G6 |
+| DR011 | Every reachable nixfred property on the map | `scripts/domain-census.ts` Cloudflare zone DNS enumeration of both zones plus reachability probe, filtered to census-eligible public web properties per ruling R9, diffed against the catalog, at launch and in `scheduled_checks.yml` | Filtered domain census report artifact | BLOCK | G6 |
 
-DR011 covers both zones, `nixfred.com` and `nixfred.tech`, including apex paths and every subdomain. A live property missing from the map is a blocking launch gap, resolved only by adding the entry upstream to `portfolio.json` or to the enrichment layer, never by a silent exception. Per decision F3, recorded 2026-07-11.
+DR011 covers both zones, `nixfred.com` and `nixfred.tech`, including apex paths and every subdomain. A census-eligible live property missing from the map is a blocking launch gap, resolved only by adding the entry upstream to `portfolio.json` or to the enrichment layer, never by a silent exception. Eligibility, output discipline, and the editorial exclusion mechanism are governed by ruling R9 in `docs/DECISIONS.md`. The census runs informationally, non-blocking, from Phase 1 of `docs/EXECUTION_PLAN.md` onward to surface catalog coverage gaps early; the blocking DR011 assertion stays at Gate G6. Per decision F3, recorded 2026-07-11.
 
 ### 2.3 Visual requirements VR001 to VR010
 
@@ -188,7 +188,7 @@ DR011 covers both zones, `nixfred.com` and `nixfred.tech`, including apex paths 
 | SR005 | Content type, referrer, permissions headers | `tests/e2e/security-headers.spec.ts` | Header assertion log | BLOCK | G2 |
 | SR006 | No ad, replay, chat, marketing scripts | CSP allowlist, network allowlist test, source review | Allowlist report, source note | BLOCK / MANUAL | G2 |
 | SR007 | No raw untrusted HTML from data | ESLint `set:html` ban, Astro escaping, `rehype-sanitize` | Lint result, escaping review | BLOCK | G1 |
-| SR008 | Dependency scan blocks critical and high | `security.yml` dependency review, audit gate | Dependency scan report | BLOCK | G1 |
+| SR008 | Dependency scan blocks critical and high | `ci.yml` full-tree dependency audit of the complete lockfile (primary, blocking gate); `security.yml` `dependency-review-action` as a PR-time supplement covering only changed dependencies | Dependency scan report | BLOCK | G1 |
 | SR009 | Third party actions pinned to SHAs | Workflow pin lint scan | Action pin report | BLOCK | G1 |
 | SR010 | `SECURITY.md` with reporting path | `SECURITY.md` deliverable publishing `frednix@gmail.com` and GitHub private reporting (F28), doc review | Documentation review note | MANUAL | G1 |
 
@@ -258,7 +258,7 @@ Class and mechanism for every AC row are taken directly from `docs/TEST_PLAN.md`
 | AC037 | Lighthouse budgets pass or exception | Lighthouse CI mobile profile | Lighthouse report | BLOCK | G5 |
 | AC038 | Renderer pauses when hidden | `tests/e2e` frame counter across visibility | Frame counter assertion | BLOCK | G3 |
 | AC039 | Low capability reduces DPR and effects | `tests/unit` quality profile, browser config test | Quality profile assertion | BLOCK | G3 |
-| AC040 | No credentials anywhere | Secret scan of tree, history, output, review | Secret scan report, review note | BLOCK / MANUAL | G1 |
+| AC040 | No credentials anywhere | `security.yml` gitleaks full git history scan, GitHub secret scanning push protection, `ci.yml` build output scan, review | Secret scan report, review note | BLOCK / MANUAL | G1 |
 | AC041 | Security headers on custom domain | `security-headers.spec.ts`, production smoke | Header assertion, production check | BLOCK | G2 |
 | AC042 | No unapproved third party scripts | Network allowlist test | Request allowlist report | BLOCK | G2 |
 | AC043 | Cloudflare Web Analytics only | Allowlist test, source review | Network trace, source note | BLOCK / MANUAL | G2 |
@@ -277,6 +277,8 @@ Class and mechanism for every AC row are taken directly from `docs/TEST_PLAN.md`
 | AC056 | Homepage card opens production domain | `tests/e2e` homepage card smoke | Homepage card smoke result | BLOCK | G6 |
 | AC057 | Docs match implementation | Documentation review at release | Documentation review note | MANUAL | G5 |
 | AC058 | Fred final review, follow ups filed | Fred review, GitHub issues | Issue list or acceptance note | MANUAL | G6 |
+
+AC041's first pass at G2 is preview evidence only: the header assertion runs against a Cloudflare preview deployment, which proves `public/_headers` is wired correctly but is not the custom domain. The row does not close on that preview evidence alone. It closes only when `production.yml`'s custom domain smoke re-asserts the same headers on `https://galaxy.nixfred.com` at G6 (Standing enforcement item 5), which is the actual proof the requirement's own name calls for.
 
 ### 2.10 World class rubric WC01 to WC15
 
@@ -320,11 +322,11 @@ No requirement matrix rows resolve here. G0 is verified by its own five provisio
 ### G1 Foundation (35 rows)
 FR006, FR007, FR008, FR032, FR033, FR048, FR063, DR001, DR002, DR003, DR004, DR005, DR006, DR007, DR008, DR009, DR010, SR001, SR002, SR003, SR007, SR008, SR009, SR010, AC003, AC005, AC028, AC029, AC030, AC031, AC032, AC033, AC040, AC044, AC045.
 
-### G2 Atlas first (43 rows)
-FR001, FR002, FR003, FR004, FR022, FR023, FR024, FR025, FR028, FR030, FR049, FR050, FR051, FR054, FR055, FR062, FR065, AR001, AR002, AR003, AR005, AR010, PR004, PR012, SR004, SR005, SR006, AN001, AN002, AN004, AC001, AC002, AC004, AC021, AC025, AC027, AC036, AC041, AC042, AC043, AC046, AC047, F1F2.
+### G2 Atlas first (42 rows)
+FR001, FR002, FR003, FR004, FR023, FR024, FR025, FR028, FR030, FR049, FR050, FR051, FR054, FR055, FR062, FR065, AR001, AR002, AR003, AR005, AR010, PR004, PR012, SR004, SR005, SR006, AN001, AN002, AN004, AC001, AC002, AC004, AC021, AC025, AC027, AC036, AC041, AC042, AC043, AC046, AC047, F1F2.
 
-### G3 The Galaxy (54 rows)
-FR005, FR009, FR010, FR011, FR012, FR013, FR014, FR015, FR016, FR017, FR018, FR019, FR020, FR021, FR034, FR038, FR052, FR053, FR056, FR061, FR064, VR003, VR005, VR007, VR008, VR009, AR004, AR006, AR007, AR008, AR009, PR001, PR002, PR003, PR005, PR006, PR010, PR011, AC008, AC009, AC010, AC011, AC012, AC013, AC015, AC016, AC022, AC023, AC024, AC026, AC034, AC035, AC038, AC039.
+### G3 The Galaxy (55 rows)
+FR005, FR009, FR010, FR011, FR012, FR013, FR014, FR015, FR016, FR017, FR018, FR019, FR020, FR021, FR022, FR034, FR038, FR052, FR053, FR056, FR061, FR064, VR003, VR005, VR007, VR008, VR009, AR004, AR006, AR007, AR008, AR009, PR001, PR002, PR003, PR005, PR006, PR010, PR011, AC008, AC009, AC010, AC011, AC012, AC013, AC015, AC016, AC022, AC023, AC024, AC026, AC034, AC035, AC038, AC039.
 
 ### G4 Features (26 rows)
 FR026, FR027, FR029, FR031, FR035, FR036, FR037, FR039, FR040, FR041, FR042, FR043, FR044, FR045, FR046, FR047, FR057, FR058, FR059, FR060, AN003, AC014, AC017, AC018, AC019, AC020.
@@ -353,7 +355,7 @@ These rows do not stop mattering at launch. They must keep passing, and a regres
 
 1. `scheduled_checks.yml` monitoring. Keeps AC005 external links, AC028 catalog schema, DR011 total domain coverage, and the ongoing half of AC053 domain health and AC056 homepage card passing after launch. Default daily, the census on the maintenance schedule. An actionable failure, including any newly discovered live property missing from the map, opens or updates a single tracking issue and reopens G6.
 
-2. `security.yml` scanning. Keeps SR008 dependency severity and SR009 action pinning, and AC044, passing on every push, pull request, and weekly schedule. A new critical or high advisory without a dated exception in `docs/DECISIONS.md` reopens G5, and a repointed unpinned action reopens G1.
+2. `security.yml` scanning. Keeps SR009 action pinning, AC044, and AC040 secret scanning (gitleaks full git history) passing on every push, pull request, and weekly schedule, and supplements `ci.yml`'s primary, full-tree SR008 dependency audit with a PR-time dependency review of changed dependencies. A new critical or high advisory without a dated exception in `docs/DECISIONS.md` reopens G5, and a repointed unpinned action reopens G1.
 
 3. `sync-catalog.yml` validation. Keeps AC002 catalog completeness, AC003 no manual master list, AC033 sync report and enrichment preservation, and the F1F2 anchor and hero edge assertions passing as upstream changes. Every sync pull request runs the full `ci.yml` and `preview.yml`, so a sync that breaks any G1 or G2 data row reopens that gate before it can merge.
 

@@ -69,7 +69,7 @@ Note: Part 5, the Fred session rulings of 2026-07-11, is the supreme layer of th
 ### Deployment
 
 1. Cloudflare Pages project name: `galaxy-nixfred-com`. Fixed target.
-2. Production domain: `galaxy.nixfred.com`. Fixed target and Q130.
+2. Production domain: `galaxy.nixfred.com`. Fixed target and D130.
 3. Production approval policy: automatic deployment on merge to `main`. No manual GitHub environment approval. The automated quality gates are the approval. Q67 and Q68.
 4. Preview access policy: every pull request receives a Cloudflare preview deployment. Previews must not be indexable. Public preview URLs are the default unless Fred requests Cloudflare Access protection. Q66 and PENDING-FRED item on preview access.
 5. Release identifier policy: a static `/build.json` exposes the public commit SHA, build time, version, branch, and catalog revision. Q74. The release tag form is a minor PENDING-FRED item with a safe default.
@@ -223,6 +223,14 @@ R7. Launch tour names. The three launch tours are Start Here, AI and Infrastruct
 
 R8. Canonical workflow set. The delivery pipeline uses seven GitHub Actions workflows: `ci.yml`, `preview.yml`, `production.yml`, `rollback.yml`, `scheduled_checks.yml`, `security.yml`, and `sync-catalog.yml`, as specified in `docs/CI_CD.md`. This resolves the naming conflict between the CI/CD requirements document and the professional file manifest in favor of the CI/CD contract, because its mandatory `production.yml` and `rollback.yml` behaviors carry acceptance criteria (AC051, AC052) and because least privilege forbids merging workflows with different permission profiles. The manifest's `deploy.yml` is delivered as `production.yml`; the manifest's five workflow list is superseded on this one point. `docs/ARCHITECTURE.md` section 10 defers to `docs/CI_CD.md` for workflow decomposition.
 
+R9. Census privacy scoping, recorded 2026-07-11. The DR011 domain census satisfies decision F3 (every public web property appears) while honoring ruling R4 (no internal infrastructure facts in public):
+
+1. Raw zone enumeration output never leaves the workflow run: never committed, never uploaded as an artifact, never printed to logs, never included in issue bodies.
+2. A hostname or path is census-eligible only if it serves public HTML over HTTPS with an HTTP 200 response, meaning it is a public web property.
+3. DNS records that are not public websites (mail, TXT, service CNAMEs, API endpoints, tooling, anything failing the eligibility check) appear in outputs only as aggregate counts, never by name.
+4. The public census report and any GitHub issue may name only census-eligible gaps, public websites missing from the map.
+5. An editorial exclusion file `src/data/census-exclusions.json` may exclude a census-eligible public website from the map requirement, each entry carrying a reason, entries limited to already-public websites, exclusions auditable and never silent.
+
 ## Part 4. PENDING-FRED items
 
 These items genuinely require Fred's personal input and cannot safely default. Each states the build phase that needs it and the safe fallback if it stays unanswered. Nothing here blocks the start of the build. Every fallback keeps the site shippable and truthful.
@@ -301,7 +309,7 @@ Fallback: Firefox behavioral end to end tests are blocking, Firefox visual regre
 
 ## Part 5. Fred session rulings, recorded 2026-07-11
 
-Fred answered a 28 question preference interview in person. These answers are settled decisions. Where an answer overrides an earlier accepted default or a war room position, the override is explicit and governs. Resolution status of Part 4 items is noted per item.
+Fred answered a 28 question preference interview in person, producing 30 numbered rulings, F1 through F30 (some questions yielded more than one ruling). These answers are settled decisions. Where an answer overrides an earlier accepted default or a war room position, the override is explicit and governs. Resolution status of Part 4 items is noted per item.
 
 ### Content anchors (resolves P1, P2)
 

@@ -9,7 +9,7 @@ Source papers, cited throughout by filename:
 - `03_REFERENCE_INTEL.md` (reference intelligence seat)
 - `04_ADVERSARIAL_CRITIQUE.md` (adversarial critic seat)
 
-`docs/ART_DIRECTION.md` remains valid wherever this document does not explicitly override it. Where the two conflict, this document wins, and every such delta is listed in Section 3. This revision also incorporates Fred's direct rulings from a 28 question preference interview, recorded in `docs/DECISIONS.md` Part 5 (F1 through F29). A Fred ruling always outranks a seat position paper; where F9 overrides the critic's tiebreaker recommendation, Section 1 states the override explicitly.
+`docs/ART_DIRECTION.md` remains valid wherever this document does not explicitly override it. Where the two conflict, this document wins, and every such delta is listed in Section 3. This revision also incorporates Fred's direct rulings from a 28 question preference interview, recorded in `docs/DECISIONS.md` Part 5 (F1 through F30). A Fred ruling always outranks a seat position paper; where F9 overrides the critic's tiebreaker recommendation, Section 1 states the override explicitly.
 
 ## 1. The Ruling Thesis
 

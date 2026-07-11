@@ -48,9 +48,9 @@ Same restrained arrival, 60ms stagger behind the title, never simultaneous with 
 
 **Frame 4 (900ms to 1.5s):** The three opening actions resolve as a row (desktop) or stack (mobile), bottom third of viewport, clear of the live map:
 
-`ENTER THE MAP` — primary, filled/high contrast
-`START A TOUR` — secondary, outlined
-`OPEN ATLAS` — tertiary, text-only with an underline rule
+`ENTER THE MAP`: primary, filled/high contrast
+`START A TOUR`: secondary, outlined
+`OPEN ATLAS`: tertiary, text-only with an underline rule
 
 By 1.5 seconds the visitor can click any of the three. No animation gates the click. If the visitor clicks `ENTER THE MAP` at 400ms because they are impatient, the site must honor it immediately and let the remaining boot lines simply stop being visible, not fight the input.
 

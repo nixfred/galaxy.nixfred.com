@@ -33,7 +33,7 @@ The reconciliation rule is that `04_CICD_REQUIREMENTS.md` is authoritative for C
 | 3 | `production.yml` | Deploy the validated artifact to production, verify the custom domain, record evidence, auto rollback on failure. | Highest privilege. Bound to the `production` environment and to `main` only. |
 | 4 | `rollback.yml` | Manual, auditable recovery to a prior healthy production deployment. | Human triggered recovery must be separate from the deploy path for a clean audit trail. |
 | 5 | `scheduled_checks.yml` | Scheduled health checks of domain, assets, links, catalog, thumbnails, external hosts, and the DR011 coverage census. Opens issues on actionable failure. | Monitoring cadence and `issues: write` only, no deploy rights. |
-| 6 | `security.yml` | CodeQL static analysis and dependency review or scan. | Needs `security-events: write`, an elevated scope kept out of `ci.yml`. |
+| 6 | `security.yml` | CodeQL static analysis, full git history secret scanning (gitleaks), and a pull request time dependency review that supplements the full-tree audit in `ci.yml`. | Needs `security-events: write`, an elevated scope kept out of `ci.yml`. |
 | 7 | `sync-catalog.yml` | Weekly upstream snapshot refresh that opens a change report pull request. | Content update cadence, opens a PR with `contents: write` plus `pull-requests: write`, distinct from monitoring. |
 
 ### 2.1 Manifest deviation, stated explicitly
@@ -83,6 +83,7 @@ Secrets, stored in the environments above, never in files, never echoed (`04` se
 |--------|-------|---------|
 | `CLOUDFLARE_API_TOKEN` | Account, Cloudflare Pages, Edit. Nothing more. This covers Direct Upload, deployment listing, the rollback API, and Pages custom domain management. | `preview`, `production`, `rollback` |
 | `CLOUDFLARE_ACCOUNT_ID` | Account identifier. Not truly secret, but `04` lists it under protected values, so it is stored as a secret. | `preview`, `production`, `rollback` |
+| `CF_DNS_READ_TOKEN` | A separate Cloudflare token scoped to Zone:Zone:Read plus Zone:DNS:Read for the `nixfred.com` and `nixfred.tech` zones only. Kept separate from `CLOUDFLARE_API_TOKEN` because the census only ever needs to read DNS records, never to deploy, so it carries none of the Pages Edit scope. Stored as a plain repository secret, since the census runs in `scheduled_checks.yml`, which declares no GitHub environment (`docs/DECISIONS.md` R9). | `scheduled_checks.yml` (DR011 census) |
 
 Non secret repository or environment variables (`04` variables section):
 
@@ -92,6 +93,8 @@ Non secret repository or environment variables (`04` variables section):
 | `PRODUCTION_BRANCH` | `main` |
 | `PRODUCTION_DOMAIN` | `galaxy.nixfred.com` |
 | `CF_WEB_ANALYTICS_TOKEN` | Public Cloudflare Web Analytics token, only if the beacon requires an explicit token. It ships in client HTML, so it is a variable, not a secret (`Q73`, `AC043`). |
+| `CF_ZONE_NIXFRED_COM` | The Cloudflare zone id for `nixfred.com`, read by the DR011 census alongside `CF_DNS_READ_TOKEN`. |
+| `CF_ZONE_NIXFRED_TECH` | The Cloudflare zone id for `nixfred.tech`, read by the DR011 census alongside `CF_DNS_READ_TOKEN`. |
 
 The Cloudflare token is deliberately not granted Zone DNS Edit. Custom domain attachment through the Pages API manages the DNS record automatically when the zone is on the same account. A broader Zone DNS Edit token, if ever needed, is used only during interactive provisioning and is never stored in CI. See `docs/OPERATIONS.md`.
 
@@ -120,24 +123,26 @@ Jobs, in order within a single job for artifact locality, or as a fan out that s
 1. Checkout at the exact ref.
 2. Install Bun from `.bun-version`.
 3. Install dependencies from `bun.lock` with no mutation, using the frozen lockfile flag.
-4. `format:check`.
-5. `lint`.
-6. `typecheck`, strict.
-7. `astro:check`.
-8. `data:validate`, which runs `validate-catalog.ts` and `validate-graph.ts` (`AC028` to `AC031`).
-9. `test:unit`.
-10. `build`, producing `dist`, including `generate-build-info.ts` writing `dist/build.json` with commit SHA, build time, version, and catalog revision checksum (`04` artifact integrity item 2, `AC050`).
-11. `report-bundle.ts` to check bundle and asset budgets (`AC036`).
-12. `test:e2e` and `test:a11y` (Playwright plus axe) against the built `dist` served locally (`AC025`, `AC045`).
-13. `test:visual` against committed baselines (`Q72`).
-14. Compute `sha256sum` over a deterministic archive of `dist`, write `dist.sha256`, print it to the job summary.
-15. Upload two artifacts: `site-dist-${{ github.sha }}` containing `dist`, and `ci-reports-${{ github.sha }}` containing test, coverage, accessibility, visual, and bundle reports. Retention per the settled policy: build artifacts (`site-dist`) 30 days, test reports (`ci-reports`) 14 days, release evidence 90 days.
+4. Full-tree dependency audit against the complete lockfile (`bun audit --audit-level=high`, or a SHA pinned OSV Scanner action if the pinned Bun version cannot run the audit reliably), blocking on critical and high severity findings unless a dated exception exists in `docs/DECISIONS.md` (`04` security item 9, `SR008`, `docs/SECURITY_PLAN.md` section 3.6). This is the authoritative SR008 gate; see section 4.6 for the supplementary PR-time dependency review.
+5. `format:check`.
+6. `lint`.
+7. `typecheck`, strict.
+8. `astro:check`.
+9. `data:validate`, which runs `validate-catalog.ts` and `validate-graph.ts` (`AC028` to `AC031`).
+10. `test:unit`.
+11. `build`, producing `dist`, including `generate-build-info.ts` writing `dist/build.json` with commit SHA, build time, version, and catalog revision checksum (`04` artifact integrity item 2, `AC050`).
+12. `report-bundle.ts` to check bundle and asset budgets (`AC036`).
+13. `check:links` (`scripts/check-links.ts`) against the built `dist`, verifying internal link integrity. Blocking (`AC005` internal half, section 3.7).
+14. `test:e2e` and `test:a11y` (Playwright plus axe) against the built `dist` served locally (`AC025`, `AC045`).
+15. `test:visual` against committed baselines (`Q72`).
+16. Compute `sha256sum` over a deterministic archive of `dist`, write `dist.sha256`, print it to the job summary.
+17. Upload two artifacts: `site-dist-${{ github.sha }}` containing `dist`, and `ci-reports-${{ github.sha }}` containing test, coverage, accessibility, visual, and bundle reports. Retention per the settled policy: build artifacts (`site-dist`) 30 days, test reports (`ci-reports`) 14 days, release evidence 90 days.
 
 A final aggregate gate job named `ci-status` declares `needs` on every check job and succeeds only if all pass. Branch protection requires the single context `ci-status`, so the required check list stays stable even when the matrix changes.
 
 Blocking versus warning per section 3.7. Failure of any blocking job prevents preview promotion and production deployment (`04` ci final clause).
 
-Enforces: `AC028` to `AC039`, `AC045`, `AC047` (digest origin), `SR001`, `SR002`, `SR007`.
+Enforces: `AC028` to `AC039`, `AC045`, `AC047` (digest origin), `AC005` (internal link integrity via `check-links.ts`), `SR001`, `SR002`, `SR007`, `SR008` (full-tree dependency audit, primary gate).
 
 ### 4.2 `preview.yml`, isolated preview and live verification
 
@@ -214,25 +219,26 @@ Jobs, in order:
 4. Validate the canonical catalog snapshot against schema (`04` scheduled item 4, `AC028`).
 5. Detect broken thumbnails (`04` scheduled item 5).
 6. Detect expired or redirected external hosts (`04` scheduled item 6).
-7. Run the DR011 domain census (`scripts/domain-census.ts`, `docs/DATA_MODEL.md` section 8): enumerate the Cloudflare zone DNS for `nixfred.com` and `nixfred.tech`, probe each hostname for reachability, and diff the reachable set against the merged catalog. Any live property with no corresponding node is a coverage gap.
-8. Open or update a single tracking issue only when an actionable threshold is crossed, and never on transient noise (`04` scheduled item 7, `Q140`). Default thresholds: custom domain unreachable, any essential asset missing, any internal link broken, catalog invalid, more than two broken thumbnails, an external host returning a permanent error, or any live property missing from the map (a DR011 coverage gap). Existing open issues are updated in place to avoid spam.
+7. Run the DR011 domain census (`scripts/domain-census.ts`, `docs/DATA_MODEL.md` section 8), scoped per ruling R9 in `docs/DECISIONS.md`: enumerate the Cloudflare zone DNS for `nixfred.com` and `nixfred.tech` using `CF_DNS_READ_TOKEN`, `CF_ZONE_NIXFRED_COM`, and `CF_ZONE_NIXFRED_TECH` (section 3.5), entirely inside the job, never committed, uploaded as an artifact, printed to logs, or placed in an issue body. Filter the enumerated hostnames to census-eligible properties, those serving public HTML over HTTPS with an HTTP 200 response, and probe each for reachability. Diff the eligible reachable set against the merged catalog checked against `src/data/census-exclusions.json`. Non-eligible DNS records (mail, TXT, service CNAMEs, API endpoints, tooling) surface only as aggregate counts, never by name. Any census-eligible live property with no corresponding node, and not listed in the exclusion file, is a coverage gap.
+8. Open or update a single tracking issue only when an actionable threshold is crossed, and never on transient noise (`04` scheduled item 7, `D140`). Default thresholds: custom domain unreachable, any essential asset missing, any internal link broken, catalog invalid, more than two broken thumbnails, an external host returning a permanent error, or any census-eligible live property missing from the map (a DR011 coverage gap). Issue bodies name only census-eligible gaps, per R9. Existing open issues are updated in place to avoid spam.
 
 Enforces: `AC005`, `AC028`, `DR011` coverage, the ongoing half of `AC053` and `AC056`.
 
-The same census is also a blocking launch gate (DR011, `docs/GATES.md`): before the initial public launch it must report zero uncovered live properties, run on demand through `workflow_dispatch` for that pre-launch verification in addition to its daily cadence. A gap at launch blocks the launch until the property is added upstream to `portfolio.json` or to `galaxy.enrichment.json`, never waived by a silent exception.
+The census also runs informationally, non-blocking, from Phase 1 of `docs/EXECUTION_PLAN.md` onward, surfacing catalog coverage gaps early in the job summary. The same census becomes a blocking launch gate (DR011, `docs/GATES.md`) only at Gate G6: before the initial public launch it must report zero uncovered census-eligible live properties, run on demand through `workflow_dispatch` for that pre-launch verification in addition to its daily cadence. A gap at launch blocks the launch until the property is added upstream to `portfolio.json`, to `galaxy.enrichment.json`, or to `src/data/census-exclusions.json` with a recorded reason, never waived by a silent exception.
 
 ### 4.6 `security.yml`, static analysis and dependency scanning
 
 Trigger: `push` to `main`, `pull_request`, and `schedule` weekly (`04` security item 8, `SR008`, `SR009`).
 
-Permissions: `security-events: write` and `contents: read` for the CodeQL job. `contents: read` and `pull-requests: write` for the dependency review job on pull requests.
+Permissions: `security-events: write` and `contents: read` for the CodeQL job. `contents: read` for the gitleaks job. `contents: read` and `pull-requests: write` for the dependency review job on pull requests.
 
 Jobs:
 
 1. CodeQL for JavaScript and TypeScript: init, autobuild or the build command, analyze, upload results as code scanning alerts (`04` security item 8, `AC044` context).
-2. Dependency review on pull requests, failing on high and critical advisories unless a dated exception exists in `docs/DECISIONS.md` (`04` security item 9, `SR008`).
+2. Full git history secret scan with a SHA pinned `gitleaks` action, running on pull requests, `push` to `main`, and the weekly schedule. A finding fails the job. This job is the evidence producer for `AC040` (secret scan of the full tree, history, output, and review).
+3. Dependency review on pull requests, a PR-time supplement covering only the dependencies changed in that pull request, failing on high and critical advisories unless a dated exception exists in `docs/DECISIONS.md` (`04` security item 9). The authoritative, full-tree `SR008` gate is the `ci.yml` dependency audit step (section 4.1), which scans the complete lockfile on every push and pull request; this job catches a newly introduced vulnerable dependency at review time before merge but does not replace the full-tree scan.
 
-Enforces: `SR008`, `SR009`, `AC044`.
+Enforces: `SR008` (supplementary; the primary gate is `ci.yml`), `SR009`, `AC044`, `AC040` (gitleaks history scan).
 
 ### 4.7 `sync-catalog.yml`, weekly upstream snapshot pull request
 
@@ -319,8 +325,10 @@ A release is complete only when the generated release report contains all 14 ite
 
 | Workflow, job | Enforces |
 |---------------|----------|
+| `ci.yml` dependency audit | `SR008` (primary, full-tree gate) |
 | `ci.yml` format, lint, typecheck, astro check | `AC045`, `SR001` |
 | `ci.yml` data validate, graph validate | `AC028`, `AC029`, `AC030`, `AC031`, `AC003` |
+| `ci.yml` check:links | `AC005` (internal link integrity) |
 | `ci.yml` unit, e2e, a11y, visual | `AC012` to `AC027` coverage, `AC025`, `AC045` |
 | `ci.yml` build, bundle budgets | `AC034`, `AC036`, `AC050` origin |
 | `ci.yml` digest, upload | `AC047` |
@@ -336,7 +344,9 @@ A release is complete only when the generated release report contains all 14 ite
 | `production.yml` release report | deployment evidence 1 to 14, `AC057` |
 | `rollback.yml` | `AC051`, `AC052` |
 | `scheduled_checks.yml` | `AC005`, `AC028`, `AC053` ongoing |
-| `security.yml` CodeQL, dep review | `SR008`, `SR009`, `AC044` |
+| `security.yml` CodeQL | `SR009`, `AC044` |
+| `security.yml` gitleaks | `AC040` (full git history scan) |
+| `security.yml` dependency review | `SR008` (PR-time supplement, changed dependencies only) |
 | `sync-catalog.yml` | `AC002`, `AC003`, `AC033`, `AC055` support |
 | all workflows, top level `permissions: {}` | `SR002`, `AC040` |
 | all workflows, SHA pinned actions | `SR009`, `AC044`, `Q78` |

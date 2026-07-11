@@ -107,6 +107,8 @@ Set a restrictive top level `permissions` block in every workflow and widen only
 | `scheduled_checks.yml` | `contents: read`, `issues: write` | Open an issue only when an actionable failure threshold is met. |
 | `security.yml` (CodeQL) | `contents: read`, `security-events: write`, `actions: read` | Upload CodeQL results to the security tab. |
 
+Where this table differs from `docs/CI_CD.md` section 11, `docs/CI_CD.md` is authoritative per `docs/GATES.md` reconciliation 2.
+
 ### 3.2 Secret scoping to production jobs
 
 The only protected values are `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. Store them in a GitHub `production` environment, not as plain repository secrets, so environment protection rules govern their use. Non secret values (Pages project name, production branch, custom domain, the public Cloudflare Web Analytics token) live in repository variables. The Cloudflare Web Analytics site token is public by design and belongs in a variable, never a secret.

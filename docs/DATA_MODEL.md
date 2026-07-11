@@ -48,7 +48,7 @@ interface EnrichmentRecord {
   upstreamRef: string;                 // the upstream url or id this slug resolves to
   status:
     | "active" | "evolving" | "archived"
-    | "client" | "experiment" | "memorial"; // AC001 vocabulary, interview Q83
+    | "client" | "experiment" | "memorial"; // AC001 vocabulary, interview D83
   launchDate?: string;                 // ISO date, only from git history, published
                                         // content, or an explicit Fred decision, FR053
   revisionDates?: string[];            // major rebuild dates, optional, FR046
