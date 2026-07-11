@@ -1,0 +1,131 @@
+# production.yml: deploy the exact CI-tested artifact to Cloudflare Pages
+# production, verify live, record evidence, auto-rollback on failed smoke.
+# Contract: docs/CI_CD.md 4.3. Trigger: the CI workflow completing SUCCESSFULLY
+# for a push to main (F31 trunk based: a red push can never reach here).
+#
+# Phase-aware verification: until the custom domain is attached at Phase 6,
+# live verification runs against the *.pages.dev host; the PRODUCTION_DOMAIN
+# check arms automatically once the domain resolves (AC053 owns final proof).
+#
+# Credential guard: if CLOUDFLARE_API_TOKEN is not yet provisioned, the deploy
+# is SKIPPED with a loud summary rather than failing main (G0 open item).
+name: Production
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - name: Credential guard
+        id: guard
+        env:
+          CF_TOKEN_PRESENT: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && 'yes' || 'no' }}
+        run: |
+          if [ "$CF_TOKEN_PRESENT" != "yes" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "## Deploy SKIPPED" >> "$GITHUB_STEP_SUMMARY"
+            echo "CLOUDFLARE_API_TOKEN is not provisioned (Gate G0 open item)." >> "$GITHUB_STEP_SUMMARY"
+            echo "Mint it per docs/OPERATIONS.md section 9 and re-run." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download the exact tested artifact (AC047)
+        if: steps.guard.outputs.skip == 'false'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: site-dist-${{ github.event.workflow_run.head_sha }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify artifact digest (AC047)
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          expected=$(cat dist.sha256)
+          actual=$(cd dist && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
+          if [ "$expected" != "$actual" ]; then
+            echo "digest mismatch: expected $expected got $actual"; exit 1
+          fi
+          echo "artifact digest verified: $actual" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy via Wrangler Direct Upload
+        if: steps.guard.outputs.skip == 'false'
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy dist
+            --project-name=${{ vars.CF_PAGES_PROJECT }}
+            --branch=${{ vars.PRODUCTION_BRANCH }}
+            --commit-hash=${{ github.event.workflow_run.head_sha }}
+
+      - name: Live verification (pages host, then custom domain when attached)
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          set -e
+          verify() {
+            url="$1"
+            echo "verifying $url"
+            code=$(curl -s -o page.html -w '%{http_code}' "$url")
+            [ "$code" = "200" ] || { echo "status $code from $url"; return 1; }
+            grep -q "NIXFRED GALAXY" page.html || { echo "content check failed"; return 1; }
+            build=$(curl -s "$url/build.json")
+            echo "$build" | grep -q "${{ github.event.workflow_run.head_sha }}" \
+              || { echo "build.json commit mismatch (AC050)"; return 1; }
+          }
+          verify "https://${{ vars.CF_PAGES_PROJECT }}.pages.dev"
+          if curl -s --max-time 10 -o /dev/null -w '%{http_code}' "https://${{ vars.PRODUCTION_DOMAIN }}" | grep -q 200; then
+            verify "https://${{ vars.PRODUCTION_DOMAIN }}"
+            echo "custom domain verified" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "custom domain not attached yet (arms at Phase 6)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "production verified at $(date -u +%FT%TZ) for ${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Auto-rollback on failed verification
+        if: failure() && steps.guard.outputs.skip == 'false'
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ vars.CF_PAGES_PROJECT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "verification failed; restoring previous production deployment"
+          deployments=$(curl -s -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROJECT/deployments?env=production&per_page=5")
+          prev=$(echo "$deployments" | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)['result']
+          ok=[x for x in d[1:] if x.get('latest_stage',{}).get('status')=='success']
+          print(ok[0]['id'] if ok else '')")
+          if [ -n "$prev" ]; then
+            curl -s -X POST -H "Authorization: Bearer $CF_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROJECT/deployments/$prev/rollback" > /dev/null
+            echo "rolled back to deployment $prev" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no prior successful production deployment to restore" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Production verification failed for ${{ github.event.workflow_run.head_sha }}" \
+            --body "production.yml verification failed. Rollback target: ${prev:-none}. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

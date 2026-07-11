@@ -48,6 +48,22 @@ jobs:
       - name: Data validation (F1 anchors, F2 hero edges, DR008)
         run: bun run data:validate
 
+      - name: Dependency audit, full tree (SR008)
+        run: |
+          set +e
+          bun audit > audit.txt 2>&1
+          status=$?
+          set -e
+          cat audit.txt
+          if [ $status -ne 0 ] && grep -qE '(high|critical):' audit.txt; then
+            echo 'blocking: high or critical advisory in the dependency tree (SR008).' >> "$GITHUB_STEP_SUMMARY"
+            echo 'A dated exception in docs/DECISIONS.md is the only bypass.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          if [ $status -ne 0 ]; then
+            echo 'warning: low or moderate advisories present, not blocking.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Unit tests (incl AC031 determinism)
         run: bun run test:unit
 

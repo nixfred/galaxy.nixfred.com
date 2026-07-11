@@ -1,0 +1,81 @@
+# rollback.yml: manual, auditable recovery to a prior healthy production
+# deployment. Contract: docs/CI_CD.md 4.4. Shares the production concurrency
+# group so a rollback and a deploy can never race the live environment.
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: 'Cloudflare Pages deployment id to restore (must be a prior successful PRODUCTION deployment, never a preview)'
+        required: true
+      reason:
+        description: 'Why this rollback is happening (recorded in the audit trail)'
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    name: Restore prior production deployment
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Show the selected target before acting
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ vars.CF_PAGES_PROJECT }}
+          TARGET: ${{ inputs.deployment_id }}
+        run: |
+          info=$(curl -s -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROJECT/deployments/$TARGET")
+          env_name=$(echo "$info" | python3 -c "import json,sys; print(json.load(sys.stdin)['result']['environment'])")
+          if [ "$env_name" != "production" ]; then
+            echo "refusing: target $TARGET is environment '$env_name', not production (AC051)."
+            exit 1
+          fi
+          echo "$info" | python3 -c "
+          import json,sys
+          r=json.load(sys.stdin)['result']
+          print('target:', r['id'])
+          print('created:', r.get('created_on'))
+          print('commit:', r.get('deployment_trigger',{}).get('metadata',{}).get('commit_hash'))" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Rollback via Cloudflare Pages API
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ vars.CF_PAGES_PROJECT }}
+          TARGET: ${{ inputs.deployment_id }}
+        run: |
+          result=$(curl -s -X POST -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROJECT/deployments/$TARGET/rollback")
+          echo "$result" | python3 -c "import json,sys; d=json.load(sys.stdin); exit(0 if d.get('success') else 1)" \
+            || { echo "rollback API call failed"; echo "$result"; exit 1; }
+
+      - name: Verify live after restore
+        run: |
+          sleep 10
+          for host in "https://${{ vars.CF_PAGES_PROJECT }}.pages.dev" "https://${{ vars.PRODUCTION_DOMAIN }}"; do
+            code=$(curl -s --max-time 15 -o /dev/null -w '%{http_code}' "$host" || echo 000)
+            echo "$host -> $code" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Record the audit trail
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Rollback executed: ${{ inputs.deployment_id }}" \
+            --body "Initiated by: ${{ github.actor }}
+          Reason: ${{ inputs.reason }}
+          Restored deployment: ${{ inputs.deployment_id }}
+          Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

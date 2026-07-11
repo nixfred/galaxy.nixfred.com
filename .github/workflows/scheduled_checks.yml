@@ -1,0 +1,81 @@
+# scheduled_checks.yml: daily health monitoring plus the DR011 coverage census
+# (privacy scoped per ruling R9: raw enumeration never leaves the job; only
+# census-eligible public websites are ever named). Contract: docs/CI_CD.md 4.5.
+name: Scheduled Checks
+
+on:
+  schedule:
+    - cron: '43 9 * * *' # daily, 05:43 ET
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: scheduled-checks
+  cancel-in-progress: true
+
+jobs:
+  health:
+    name: Health and coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Production reachability
+        id: prod
+        run: |
+          host="https://${{ vars.CF_PAGES_PROJECT }}.pages.dev"
+          if curl -s --max-time 15 -o /dev/null -w '%{http_code}' "https://${{ vars.PRODUCTION_DOMAIN }}" | grep -q 200; then
+            host="https://${{ vars.PRODUCTION_DOMAIN }}"
+          fi
+          code=$(curl -s --max-time 15 -o /dev/null -w '%{http_code}' "$host" || echo 000)
+          echo "host=$host code=$code" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" != "200" ]; then echo "unreachable=true" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Catalog validation against live data files
+        run: bun run data:validate
+
+      - name: Coverage census (DR011, R9 scoped)
+        id: census
+        env:
+          CF_DNS_READ_TOKEN: ${{ secrets.CF_DNS_READ_TOKEN }}
+          CF_ZONE_NIXFRED_COM: ${{ vars.CF_ZONE_NIXFRED_COM }}
+          CF_ZONE_NIXFRED_TECH: ${{ vars.CF_ZONE_NIXFRED_TECH }}
+        run: |
+          bun run scripts/domain-census.ts | tee census-report.txt
+          tail -25 census-report.txt >> "$GITHUB_STEP_SUMMARY"
+          if grep -q "COVERAGE GAPS" census-report.txt; then
+            echo "gaps=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update the tracking issue on actionable failure
+        if: steps.prod.outputs.unreachable == 'true' || steps.census.outputs.gaps == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title="Scheduled checks: actionable findings"
+          body="Findings from the daily scheduled checks (docs/CI_CD.md 4.5).
+
+          $(cat census-report.txt 2>/dev/null || echo 'census did not run')
+
+          Reachability: see run summary. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          Gap resolution procedure: docs/OPERATIONS.md section 8."
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$existing" ] && [ "$existing" != "null" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+          fi

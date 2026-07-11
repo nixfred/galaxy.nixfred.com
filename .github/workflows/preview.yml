@@ -1,0 +1,95 @@
+# preview.yml: deploy the CI-validated artifact of a pull request as an
+# isolated preview, comment the URL, verify it live including noindex.
+# Contract: docs/CI_CD.md 4.2. Fork safety: untrusted code only ever built by
+# the secretless ci.yml; this workflow deploys the already-built artifact in
+# base-repo context (workflow_run).
+name: Preview
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions: {}
+
+concurrency:
+  group: preview-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    name: Deploy preview
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    environment: preview
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Credential guard
+        id: guard
+        env:
+          CF_TOKEN_PRESENT: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && 'yes' || 'no' }}
+        run: |
+          if [ "$CF_TOKEN_PRESENT" != "yes" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Preview SKIPPED: CLOUDFLARE_API_TOKEN not provisioned (G0 open item)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download the exact tested artifact (AC047)
+        if: steps.guard.outputs.skip == 'false'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: site-dist-${{ github.event.workflow_run.head_sha }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy preview via Wrangler Direct Upload
+        if: steps.guard.outputs.skip == 'false'
+        id: deploy
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy dist
+            --project-name=${{ vars.CF_PAGES_PROJECT }}
+            --branch=preview-${{ github.event.workflow_run.head_branch }}
+            --commit-hash=${{ github.event.workflow_run.head_sha }}
+
+      - name: Verify preview live (status, content, noindex)
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          url="${{ steps.deploy.outputs.deployment-url }}"
+          [ -n "$url" ] || { echo "no deployment url returned"; exit 1; }
+          code=$(curl -s -o page.html -w '%{http_code}' "$url")
+          [ "$code" = "200" ] || { echo "status $code"; exit 1; }
+          grep -q "NIXFRED GALAXY" page.html || { echo "content check failed"; exit 1; }
+          # Preview noindex: Cloudflare Pages serves X-Robots-Tag: noindex on
+          # non-production deployments; verify it is actually present.
+          curl -sI "$url" | grep -qi "x-robots-tag: noindex" \
+            || { echo "noindex header missing on preview"; exit 1; }
+          echo "preview verified: $url" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment preview URL on the pull request
+        if: steps.guard.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          URL: ${{ steps.deploy.outputs.deployment-url }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA/pulls" --jq '.[0].number')
+          [ -n "$pr" ] || { echo "no PR found for $SHA"; exit 0; }
+          body="Preview deployed and verified: $URL (commit \`${SHA:0:7}\`, noindex confirmed)"
+          existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$pr/comments" \
+            --jq '.[] | select(.body | startswith("Preview deployed")) | .id' | head -1)
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -f body="$body" > /dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/issues/$pr/comments" -f body="$body" > /dev/null
+          fi

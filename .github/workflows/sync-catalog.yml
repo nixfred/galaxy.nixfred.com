@@ -1,0 +1,66 @@
+# sync-catalog.yml: weekly upstream snapshot refresh via change-report PR.
+# Contract: docs/CI_CD.md 4.7, interview Q51. The PR runs the full ci.yml and
+# preview.yml, so a sync that breaks any data gate cannot merge (AC033 family).
+name: Sync Catalog
+
+on:
+  schedule:
+    - cron: '23 10 * * 1' # weekly, Monday 06:23 ET
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: catalog-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    name: Sync upstream catalog
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Sync snapshot
+        id: sync
+        run: |
+          bun run data:sync | tee sync-report.txt
+          if git diff --quiet src/data/portfolio.snapshot.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No upstream changes." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate the new snapshot
+        if: steps.sync.outputs.changed == 'true'
+        run: bun run data:validate
+
+      - name: Open change-report pull request
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          branch="sync/catalog-$(date -u +%Y%m%d)"
+          git config user.name "galaxy-sync-bot"
+          git config user.email "noreply@nixfred.com"
+          git checkout -b "$branch"
+          git add src/data/portfolio.snapshot.json
+          git commit -m "data: weekly catalog sync $(date -u +%F)" \
+            -m "$(cat sync-report.txt)"
+          git push -u origin "$branch"
+          gh pr create --repo "$GITHUB_REPOSITORY" \
+            --title "Catalog sync $(date -u +%F)" \
+            --body "$(printf 'Automated weekly upstream catalog sync (Q51, DR009).\n\n```\n%s\n```\n\nEnrichment is never modified by sync (AC033). CI validates the F1 anchors and F2 hero edges against the new snapshot before this can merge.' "$(cat sync-report.txt)")"
