@@ -212,6 +212,13 @@ const sectors = sectorsSchema
       aria-label="Related projects"
     >
     </ul>
+    <div
+      class="galaxy-panel__compare"
+      id="galaxy-panel-compare-result"
+      data-testid="compare-result"
+      hidden
+    >
+    </div>
     <div class="galaxy-panel__actions">
       <a
         class="btn btn-primary"
@@ -222,6 +229,12 @@ const sectors = sectorsSchema
       >
       <a class="btn btn-secondary" id="galaxy-panel-page" href="#"
         >Project Page</a
+      >
+      <button
+        type="button"
+        class="btn btn-secondary"
+        id="galaxy-panel-compare"
+        data-testid="panel-compare">Compare</button
       >
       <button
         type="button"
@@ -389,6 +402,16 @@ const sectors = sectorsSchema
   let suppressUrlWrite = false;
 
   function applySelection(slug: string | null): void {
+    // Compare mode intercept: an armed compare resolves the path to the newly
+    // selected project rather than reframing the panel to it.
+    if (compareArmed && compareFrom && slug && slug !== compareFrom) {
+      const path = controller?.compareWith(compareFrom, slug);
+      renderCompareResult(compareFrom, slug, path ?? null);
+      compareArmed = false;
+      panelCompare.textContent = 'Clear comparison';
+      panelCompare.setAttribute('aria-pressed', 'true');
+      return;
+    }
     if (!suppressUrlWrite) writeSlugToUrl(slug);
     if (!slug) {
       if (!panel.hidden) {
@@ -446,7 +469,83 @@ const sectors = sectorsSchema
     }
   }
 
-  panelClose.addEventListener('click', () => controller?.select(null));
+  panelClose.addEventListener('click', () => {
+    exitCompareMode();
+    controller?.select(null);
+  });
+
+  // Compare mode (FR035, FR036): Compare arms a pick-a-second-project state;
+  // the next selection resolves the shortest meaningful path, explained hop
+  // by hop, or reports honestly that no typed path exists.
+  const panelCompare = document.getElementById(
+    'galaxy-panel-compare',
+  ) as HTMLButtonElement;
+  const compareResult = document.getElementById('galaxy-panel-compare-result')!;
+  let compareArmed = false;
+  let compareFrom: string | null = null;
+
+  function exitCompareMode(): void {
+    compareArmed = false;
+    compareFrom = null;
+    compareResult.hidden = true;
+    compareResult.textContent = '';
+    panelCompare.setAttribute('aria-pressed', 'false');
+    panelCompare.textContent = 'Compare';
+    controller?.clearCompare();
+  }
+
+  function renderCompareResult(
+    from: string,
+    to: string,
+    path: import('../../lib/graph/pathfind').ComparePath | null,
+  ): void {
+    compareResult.hidden = false;
+    compareResult.textContent = '';
+    const fromTitle = controller?.getNode(from)?.title ?? from;
+    const toTitle = controller?.getNode(to)?.title ?? to;
+    const head = document.createElement('p');
+    head.className = 'mono-note';
+    if (!path || !path.found) {
+      head.textContent = `NO TYPED PATH BETWEEN ${fromTitle.toUpperCase()} AND ${toTitle.toUpperCase()}`;
+      compareResult.append(head);
+      return;
+    }
+    head.textContent = `PATH // ${path.steps.length} ${path.steps.length === 1 ? 'HOP' : 'HOPS'}`;
+    compareResult.append(head);
+    const ol = document.createElement('ol');
+    ol.className = 'galaxy-panel__path';
+    for (const step of path.steps) {
+      const li = document.createElement('li');
+      const a = controller?.getNode(step.from)?.title ?? step.from;
+      const b = controller?.getNode(step.to)?.title ?? step.to;
+      const hop = document.createElement('span');
+      hop.className = 'galaxy-panel__path-hop';
+      hop.textContent = `${a} to ${b}`;
+      const why = document.createElement('span');
+      why.className = 'galaxy-panel__reason';
+      why.textContent = step.reason;
+      li.append(hop, why);
+      ol.append(li);
+    }
+    compareResult.append(ol);
+  }
+
+  panelCompare.addEventListener('click', () => {
+    if (compareArmed || panelCompare.textContent === 'Clear comparison') {
+      exitCompareMode();
+      return;
+    }
+    compareArmed = true;
+    compareFrom = controller?.getSelectedSlug() ?? null;
+    panelCompare.setAttribute('aria-pressed', 'true');
+    panelCompare.textContent = 'Pick a project to compare';
+    compareResult.hidden = false;
+    compareResult.textContent = '';
+    const hint = document.createElement('p');
+    hint.className = 'mono-note';
+    hint.textContent = 'SELECT A SECOND PROJECT TO TRACE THE PATH BETWEEN THEM';
+    compareResult.append(hint);
+  });
 
   // Sector filters (FR028-FR031): toggle buttons isolate sectors; the count
   // line reports visible projects; camera and selection survive filtering

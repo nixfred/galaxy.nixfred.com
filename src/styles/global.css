@@ -1175,3 +1175,30 @@ h1 {
   gap: 0.6rem;
   align-items: center;
 }
+
+/* Compare mode path readout inside the panel (FR036). */
+.galaxy-panel__compare[hidden] {
+  display: none;
+}
+
+.galaxy-panel__path {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.galaxy-panel__path li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border-left: var(--stroke-selected) solid var(--accent-signal);
+  padding-left: 0.6rem;
+}
+
+.galaxy-panel__path-hop {
+  font-size: 13px;
+  color: var(--text-primary);
+}

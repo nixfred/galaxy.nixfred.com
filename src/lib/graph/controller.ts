@@ -19,6 +19,7 @@ import {
 } from './selection';
 import { QualityController, detectInitialTier } from './quality';
 import { readSectorPalette, type SectorColor } from './palette';
+import { shortestMeaningfulPath, type ComparePath } from './pathfind';
 import type {
   GalaxyGraph,
   HoverChange,
@@ -439,6 +440,40 @@ export class GalaxyController {
     return this.graph.edges.filter(
       (e) => e.source === slug || e.target === slug,
     );
+  }
+
+  // Compare mode (FR035, FR036): illuminate the shortest meaningful path
+  // between the current selection and a second project, dim everything else,
+  // and return the typed path so the panel can explain each hop. Returns null
+  // if nothing is selected to compare from.
+  compareWith(fromSlug: string, otherSlug: string): ComparePath | null {
+    if (!this.graph || !this.starField) return null;
+    const from = fromSlug;
+    if (!from || from === otherSlug) return null;
+    const path = shortestMeaningfulPath(this.graph.edges, from, otherSlug);
+    const onPath = new Set(path.slugs);
+    this.starField.resetEnergyOverrides();
+    this.graph.nodes.forEach((node, index) => {
+      if (!onPath.has(node.slug)) {
+        this.starField?.setEnergyOverride(index, 0.12);
+      }
+    });
+    // Frame both endpoints: aim the camera at their midpoint.
+    const a = this.getNode(from);
+    const b = this.getNode(otherSlug);
+    if (a && b) {
+      this.cameraRig?.focusOn(
+        (a.position.x + b.position.x) / 2,
+        (a.position.z + b.position.z) / 2,
+        38,
+      );
+      if (this.reducedMotion) this.cameraRig?.snapToGoal();
+    }
+    return path;
+  }
+
+  clearCompare(): void {
+    this.recomputeEnergies();
   }
 
   private handleContextLost(): void {
