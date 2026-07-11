@@ -1,0 +1,47 @@
+---
+// The base HTML frame for every page. FR001: a usable shell before any bundle.
+// F32: the version is visible at all times, every mode and viewport.
+// F33: permanent links to nixfred.com and the public repository, every page.
+import { getBuildInfo } from '@lib/buildInfo';
+import '../styles/tokens.css';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const build = getBuildInfo();
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#050507" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <slot />
+    <footer class="system-panel" aria-label="System information">
+      <span class="system-panel__version" data-testid="build-version"
+        >{build.version}</span
+      >
+      <nav class="system-panel__links" aria-label="Permanent links">
+        <a href="https://nixfred.com" rel="noopener">nixfred.com</a>
+        <a
+          href="https://github.com/nixfred/galaxy.nixfred.com"
+          rel="noopener"
+          data-testid="repo-link">source</a
+        >
+      </nav>
+    </footer>
+  </body>
+</html>

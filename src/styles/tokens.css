@@ -1,0 +1,14 @@
+/* Design tokens per docs/DESIGN_BIBLE.md BD01 (near-black surface system).
+   The full token set lands with the Phase 2 shell; these are the base layer. */
+:root {
+  --surface-0: #050507;
+  --surface-1: #0a0a0f;
+  --surface-2: #101018;
+  --text-primary: #e8e8ec;
+  --text-secondary: #9a9aa6;
+  --text-metadata: #6b6b78;
+  --accent-interactive: #62d9e8;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
