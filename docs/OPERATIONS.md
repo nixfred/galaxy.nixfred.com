@@ -436,3 +436,9 @@ Fred authorized local wrangler as the deploy path while the CI token remains unm
 2. Custom domain `galaxy.nixfred.com` attached to the Pages project via the Pages API (OAuth token, `pages:write`). Pages did NOT auto-create DNS.
 3. CNAME `galaxy -> galaxy-nixfred-com.pages.dev` (proxied) created in the nixfred.com zone. Discovery: the env token stored as `CF_DNS_READ_TOKEN` holds Zone DNS WRITE, not read only. It is over-scoped for the census. ACTION ITEM: replace the repository secret with a true read-only token when Fred mints credentials; the census never needed write and R9 assumed read only.
 4. Build-in-public ruling applied: the domain serves the construction shell while phases proceed; full launch acceptance (headers, AC053 evidence, Fred review) still closes at Gate G6. CI deployments take over the moment `CLOUDFLARE_API_TOKEN` lands (the credential guard self-heals).
+
+### Known launch item: Cloudflare Rocket Loader vs CSP, 2026-07-11
+
+The nixfred.com Cloudflare zone has Rocket Loader enabled globally. It injects an inline bootstrap script that the strict site CSP (script-src 'self' plus Cloudflare Insights, SR004) correctly blocks, producing one benign console CSP warning and docking Lighthouse best-practices from 100 to 92. The site is fully functional: the CSP is doing its job by refusing the inline script.
+
+Resolution (Fred, one action, before or at launch): in the Cloudflare dashboard, either turn Rocket Loader off, or add a Configuration Rule that disables Rocket Loader for hostname galaxy.nixfred.com only (preferred, leaves other sites untouched). Larry's census token has DNS scope only and cannot change zone settings. Until then the warning is cosmetic and does not affect security or function. Tracked for the G6 console-error check.
