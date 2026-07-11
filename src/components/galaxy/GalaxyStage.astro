@@ -1,0 +1,213 @@
+---
+// The single hydration island for the whole map (docs/ARCHITECTURE.md
+// section 2, ADR-0001). Server-rendered output is inert: a canvas, a
+// no-JS-required fallback link into Atlas, and the loading status FR002
+// requires. No Three.js code ships with the initial page load; the inline
+// bootstrap script below only performs a dynamic import() once WebGL
+// support is confirmed (AC034, the lazy boundary). The canvas is aria-hidden
+// decoration (docs/ACCESSIBILITY.md section 6): the Atlas route and the
+// permanent ATLAS control here are the real accessible surface for the
+// catalog, not this component.
+---
+
+<!--
+  Two separate fixed layers, not one, because they need to sit on opposite
+  sides of the hero shell in paint order and CSS stacking cannot straddle
+  that from a single ancestor:
+  - galaxy-backdrop (z-index: -1) paints behind the static hero content, so
+    the canvas never covers the hero text.
+  - galaxy-stage (no negative z-index; pointer-events: none at the container
+    level with auto re-enabled per control, see global.css) paints above the
+    hero so its controls stay reachable, while empty space around them still
+    passes clicks through to the canvas beneath.
+  A single wrapper with z-index: -1 would bury its *entire* subtree,
+  including these controls, behind <body>'s own full-viewport box, which
+  still intercepts pointer events even though it paints nothing there.
+-->
+<div class="galaxy-backdrop" id="galaxy-backdrop">
+  <canvas
+    class="galaxy-canvas"
+    id="galaxy-canvas"
+    aria-hidden="true"
+    tabindex="-1"></canvas>
+  <div class="galaxy-label-host" id="galaxy-label-host" aria-hidden="true">
+  </div>
+</div>
+
+<div class="galaxy-stage" id="galaxy-stage" data-map-state="loading">
+  <div class="galaxy-fallback" id="galaxy-fallback" hidden>
+    <p class="mono-meta">Map unavailable on this device</p>
+    <p class="hero-support">
+      The interactive star map needs WebGL, which this browser or device does
+      not currently support. The complete catalog is still fully available.
+    </p>
+    <a class="btn btn-primary" href="/atlas/">Open the Atlas</a>
+  </div>
+
+  <div class="galaxy-hud" id="galaxy-hud">
+    <ul
+      class="galaxy-boot-states"
+      id="galaxy-boot-states"
+      data-testid="galaxy-boot-states"
+    >
+      <li data-state="catalog-loading">Catalog loaded</li>
+      <li data-state="renderer-ready">Renderer ready</li>
+      <li data-state="labels-ready">Labels ready</li>
+      <li data-state="online">Map online</li>
+    </ul>
+    <button
+      type="button"
+      class="btn btn-tertiary galaxy-skip"
+      id="galaxy-skip"
+      data-testid="galaxy-skip"
+    >
+      Skip
+    </button>
+  </div>
+
+  <div class="galaxy-controls">
+    <a
+      class="btn btn-secondary galaxy-atlas-link"
+      href="/atlas/"
+      data-testid="galaxy-atlas-link"
+    >
+      Atlas
+    </a>
+    <button
+      type="button"
+      class="btn btn-secondary galaxy-pause"
+      id="galaxy-pause"
+      data-testid="galaxy-pause"
+      aria-pressed="false"
+      hidden
+    >
+      Pause Motion
+    </button>
+  </div>
+
+  <p
+    class="galaxy-readout mono-meta"
+    id="galaxy-readout"
+    data-testid="galaxy-readout"
+    aria-hidden="true"
+  >
+  </p>
+</div>
+
+<script>
+  import type {
+    GalaxyController as GalaxyControllerType,
+    MapState,
+  } from '../../lib/graph/controller';
+
+  const stage = document.getElementById('galaxy-stage')!;
+  const canvas = document.getElementById('galaxy-canvas') as HTMLCanvasElement;
+  const fallback = document.getElementById('galaxy-fallback')!;
+  const hud = document.getElementById('galaxy-hud')!;
+  const bootStates = document.getElementById('galaxy-boot-states')!;
+  const skipButton = document.getElementById(
+    'galaxy-skip',
+  ) as HTMLButtonElement;
+  const pauseButton = document.getElementById(
+    'galaxy-pause',
+  ) as HTMLButtonElement;
+  const readout = document.getElementById('galaxy-readout')!;
+  const labelHost = document.getElementById('galaxy-label-host')!;
+
+  const reducedMotionQuery = window.matchMedia(
+    '(prefers-reduced-motion: reduce)',
+  );
+
+  function detectWebgl(): boolean {
+    try {
+      const probe = document.createElement('canvas');
+      return Boolean(
+        probe.getContext('webgl2') ||
+        probe.getContext('webgl') ||
+        probe.getContext('experimental-webgl'),
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  function showFallback(): void {
+    stage.dataset.mapState = 'fallback';
+    canvas.style.display = 'none';
+    hud.style.display = 'none';
+    fallback.hidden = false;
+  }
+
+  function hideEntranceOverlay(instant: boolean): void {
+    const delay = instant || reducedMotionQuery.matches ? 0 : 450;
+    window.setTimeout(() => {
+      bootStates.classList.add('is-dismissed');
+      skipButton.hidden = true;
+    }, delay);
+  }
+
+  let controller: GalaxyControllerType | null = null;
+
+  async function boot(): Promise<void> {
+    if (!detectWebgl()) {
+      showFallback();
+      return;
+    }
+
+    skipButton.addEventListener('click', () => {
+      controller?.skipEntrance();
+      hideEntranceOverlay(true);
+    });
+
+    // "ENTER THE MAP" in the hero shell dismisses the entrance chrome too;
+    // it is a real action now rather than a dead link into a future phase.
+    for (const el of document.querySelectorAll('[data-action="enter-map"]')) {
+      el.addEventListener('click', (event) => {
+        event.preventDefault();
+        controller?.skipEntrance();
+        hideEntranceOverlay(true);
+      });
+    }
+
+    pauseButton.addEventListener('click', () => {
+      const paused = pauseButton.getAttribute('aria-pressed') === 'true';
+      pauseButton.setAttribute('aria-pressed', String(!paused));
+      controller?.setMotionPaused(!paused);
+    });
+
+    reducedMotionQuery.addEventListener('change', (event) => {
+      controller?.setReducedMotion(event.matches);
+    });
+
+    try {
+      const { GalaxyController } = await import('../../lib/graph/controller');
+      controller = new GalaxyController();
+      await controller.init(canvas, {
+        labelHost,
+        reducedMotion: reducedMotionQuery.matches,
+        onStateChange: (state: MapState) => {
+          stage.dataset.mapState = state;
+          const item = bootStates.querySelector(`[data-state="${state}"]`);
+          item?.classList.add('is-done');
+          if (state === 'renderer-ready') pauseButton.hidden = false;
+          if (state === 'online') hideEntranceOverlay(false);
+        },
+        onHover: (change) => {
+          if (change.slug) readout.textContent = `HOVER // ${change.slug}`;
+          else if (!readout.dataset.selected) readout.textContent = '';
+        },
+        onSelect: (change) => {
+          readout.dataset.selected = change.slug ?? '';
+          readout.textContent = change.slug ? `SELECTED // ${change.slug}` : '';
+        },
+        onFallback: () => showFallback(),
+      });
+    } catch {
+      showFallback();
+    }
+  }
+
+  void boot();
+
+  window.addEventListener('beforeunload', () => controller?.dispose());
+</script>

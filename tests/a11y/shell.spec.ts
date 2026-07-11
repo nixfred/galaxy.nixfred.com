@@ -23,6 +23,26 @@ test.describe('accessibility', () => {
     await expectNoSeriousOrCriticalViolations(page);
   });
 
+  test('home page canvas is aria-hidden and map controls are labeled (AR008)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.locator('#galaxy-canvas')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
+    await expect(page.getByTestId('galaxy-atlas-link')).toHaveAccessibleName(
+      /atlas/i,
+    );
+    await expect(page.getByTestId('galaxy-pause')).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(page.getByTestId('galaxy-pause')).toHaveAccessibleName(
+      /pause/i,
+    );
+    await expectNoSeriousOrCriticalViolations(page);
+  });
+
   test('atlas page has zero serious or critical violations (AC025)', async ({
     page,
   }) => {

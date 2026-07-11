@@ -32,7 +32,16 @@ const rows: string[] = [];
 
 for (const f of jsFiles) {
   const gz = gzipSync(await Bun.file(f).arrayBuffer().then(Buffer.from)).length;
-  const isViz = /three|galaxy-?stage|renderer/i.test(f);
+  // Astro's own per-component <script> extraction always names its output
+  // after the source file (e.g. GalaxyStage.astro_astro_type_script_...),
+  // which is a small inline bootstrap script by construction (PR002's
+  // lazy-import trigger), never the dynamically imported payload itself.
+  // Without this exclusion, GalaxyStage.astro's own filename collides with
+  // the "galaxy-?stage" keyword below and mis-buckets that bootstrap script
+  // into the viz budget instead of the shell budget it actually belongs to.
+  const isAstroComponentScript = /_astro_type_script_/i.test(f);
+  const isViz =
+    !isAstroComponentScript && /three|galaxy-?stage|renderer/i.test(f);
   if (isViz) vizTotal += gz;
   else shellTotal += gz;
   rows.push(`${isViz ? 'viz  ' : 'shell'} ${gz.toString().padStart(8)}B ${f}`);

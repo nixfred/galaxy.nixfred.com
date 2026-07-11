@@ -1,9 +1,14 @@
 ---
 // FR002: the full shell. Site name, boot line, primary statement, three
 // entry actions, quiet stats derived from real catalog data, and the
-// existing F32/F33 system panel from BaseLayout. Zero JS required: every
-// action here is a plain link.
+// existing F32/F33 system panel from BaseLayout. The hero itself needs no
+// JS: every action here is a plain link/button and degrades to a normal
+// page with JS disabled. GalaxyStage (docs/ARCHITECTURE.md section 2) mounts
+// as a fixed full-bleed layer behind this hero, so the map genuinely is the
+// home experience with the hero as an overlay on top of it (its own
+// server-rendered fallback covers the no-WebGL and no-JS cases).
 import BaseLayout from '../layouts/BaseLayout.astro';
+import GalaxyStage from '../components/galaxy/GalaxyStage.astro';
 import { mergeCatalog } from '@lib/catalog/merge';
 import {
   snapshotSchema,
@@ -27,6 +32,7 @@ const sectorCount = sectors.length;
   title="NIXFRED GALAXY"
   description="Every project. One connected system. An interactive star map of Fred Nix's complete body of work."
 >
+  <GalaxyStage />
   <header class="crumb-nav">
     <span class="site-name">NIXFRED GALAXY</span>
   </header>
@@ -40,10 +46,14 @@ const sectorCount = sectors.length;
       infrastructure, security, space, clients, and memory.
     </p>
     <div class="hero-actions">
-      <div class="hero-actions__group">
-        <a class="btn btn-primary" href="/atlas/">Enter the Map</a>
-        <span class="mono-note">Map mode arrives at Phase 3</span>
-      </div>
+      <a
+        class="btn btn-primary"
+        href="/atlas/"
+        data-action="enter-map"
+        data-testid="enter-map"
+      >
+        Enter the Map
+      </a>
       <a class="btn btn-secondary" href="/atlas/">Open Atlas</a>
       <a class="btn btn-tertiary" href="https://nixfred.com" rel="noopener"
         >See the Resume</a

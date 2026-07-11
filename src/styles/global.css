@@ -16,6 +16,20 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* body's own box spans the full viewport (min-height: 100vh) and, even
+     though it paints nothing itself, still intercepts pointer events ahead
+     of anything positioned behind it (docs/warroom galaxy-stage note below).
+     Re-enabled on the three landmark regions every page actually has
+     content in, so this is a no-op everywhere except behind GalaxyStage's
+     fixed backdrop on the home page, which needs clicks to fall through
+     empty space to the canvas beneath it. */
+  pointer-events: none;
+}
+
+header,
+main,
+footer {
+  pointer-events: auto;
 }
 
 a {
@@ -37,6 +51,12 @@ a {
   border-radius: var(--radius);
   padding: 0.5rem 1rem;
   z-index: 100;
+  /* A direct child of <body>, outside the header/main/footer landmarks
+     re-enabled above, so it inherits body's pointer-events: none. WebKit
+     drops pointer-events: none elements from the keyboard tab order
+     entirely (not just pointer hit-testing), so without this override the
+     skip link becomes unreachable by Tab in Safari specifically. */
+  pointer-events: auto;
 }
 
 .skip-link:focus {
@@ -215,6 +235,15 @@ a {
   max-width: 46rem;
   margin: 0 auto;
   width: 100%;
+  /* This flex column centers a small clump of content inside a much larger
+     box; the empty space around it should pass clicks/drags through to
+     GalaxyStage's canvas behind it (see the pointer-events note on `body`
+     above), so only the actual content re-enables pointer-events. */
+  pointer-events: none;
+}
+
+.shell > * {
+  pointer-events: auto;
 }
 
 .site-name {
@@ -660,6 +689,195 @@ h1 {
   flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
+}
+
+/* ---------------------------------------------------------------------- */
+/* GalaxyStage (Phase 3a, docs/ARCHITECTURE.md section 2). The canvas is    */
+/* aria-hidden decoration; the Atlas route remains the accessible surface   */
+/* (docs/ACCESSIBILITY.md section 6). Two fixed layers, not one (BD18: no   */
+/* blur, one darkening mechanic, never gaussian-blur the world behind a     */
+/* panel -- this split is about stacking order, not a second effect):       */
+/*  - galaxy-backdrop (z-index: -1) holds the canvas behind the hero.       */
+/*  - galaxy-stage holds the HUD/controls above the hero, pointer-events:   */
+/*    none at the container so empty space still reaches the canvas.       */
+/* ---------------------------------------------------------------------- */
+
+.galaxy-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--surface-0);
+  /* A direct child of <body>, outside the header/main/footer landmarks
+     re-enabled above, so without this it silently inherits body's
+     pointer-events: none and the canvas becomes completely inert: no
+     hover, no drag-to-pan/orbit, no click-to-select. .galaxy-label-host's
+     own pointer-events: none below still applies (a more specific rule on
+     that element itself), so labels correctly stay non-interactive. */
+  pointer-events: auto;
+}
+
+.galaxy-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.galaxy-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  /* Belt and suspenders alongside controller.ts's pointerdown
+     preventDefault(): a drag that starts on the canvas but crosses nearby
+     hero text should orbit/pan the camera, never trigger native text
+     selection. */
+  user-select: none;
+}
+
+.galaxy-label-host {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.galaxy-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--text-secondary);
+  background: rgba(5, 7, 10, 0.6);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  transform: translate3d(-9999px, -9999px, 0);
+}
+
+.galaxy-label--anchor {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.galaxy-label--selected {
+  color: var(--accent-signal);
+}
+
+.galaxy-fallback {
+  /* Sized to its own content, not inset: 0 -- a full-viewport box here
+     would out-rank the hero's own buttons in hit-testing (higher stacking
+     than the static hero, see the pointer-events note above .galaxy-stage)
+     even over its transparent regions, silently swallowing clicks meant
+     for "Enter the Map" / "Open Atlas" in the hero above it. */
+  position: absolute;
+  left: 50%;
+  bottom: 5.5rem;
+  transform: translateX(-50%);
+  width: calc(100% - 2rem);
+  max-width: 28rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: var(--surface-2);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--radius);
+  pointer-events: auto;
+}
+
+/* `display: flex` has to stay off the bare class above and only apply when
+   not [hidden]: the UA stylesheet's `[hidden] { display: none }` rule has
+   the same specificity as a class selector, so an unconditional
+   `.galaxy-fallback { display: flex }` here would silently out-rank it by
+   cascade order and defeat the `hidden` attribute entirely. */
+.galaxy-fallback:not([hidden]) {
+  display: flex;
+}
+
+.galaxy-hud {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  pointer-events: auto;
+}
+
+.galaxy-boot-states {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: opacity 200ms ease;
+}
+
+.galaxy-boot-states li {
+  color: var(--text-metadata);
+}
+
+.galaxy-boot-states li.is-done {
+  color: var(--text-secondary);
+}
+
+.galaxy-boot-states.is-dismissed {
+  display: none;
+}
+
+.galaxy-skip {
+  align-self: flex-start;
+}
+
+.galaxy-controls {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: auto;
+}
+
+.galaxy-pause[aria-pressed='true'] {
+  border-color: var(--accent-signal);
+  color: var(--accent-signal);
+}
+
+.galaxy-readout {
+  position: absolute;
+  right: 1rem;
+  bottom: 3.6rem;
+  margin: 0;
+  max-width: 20rem;
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .galaxy-hud,
+  .galaxy-controls,
+  .galaxy-readout {
+    left: 0.6rem;
+    right: 0.6rem;
+    bottom: 0.6rem;
+  }
+
+  .galaxy-readout {
+    bottom: 3.2rem;
+  }
 }
 
 /* ---------------------------------------------------------------------- */
