@@ -121,6 +121,14 @@ export class CameraRig {
     this.goalPolar = clamp(this.goalPolar + deltaPolar, MIN_POLAR, MAX_POLAR);
   }
 
+  /** Idle drift: "slow drift communicates that the system is alive"
+   * (docs/ART_DIRECTION.md motion language). One full orbit takes about
+   * fourteen minutes; the caller gates this on idle state, motion being
+   * active, and reduced motion being off, and any input interrupts it. */
+  driftAzimuth(delta: number): void {
+    this.goalAzimuth += 0.0075 * delta;
+  }
+
   /** Visitor-driven pan across the ground plane, bounded so the visitor
    * cannot drift into empty space forever. */
   pan(deltaX: number, deltaZ: number): void {

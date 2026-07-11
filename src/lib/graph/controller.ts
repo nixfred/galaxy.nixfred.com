@@ -321,6 +321,17 @@ export class GalaxyController {
 
     const idle = performance.now() - this.lastInputAt > IDLE_THRESHOLD * 1000;
     this.renderer?.setIdle(idle && motionActive);
+    // The living-sky drift (ART_DIRECTION motion language): only when idle,
+    // only when motion is active, never while a star is selected so the
+    // composed panel framing stays put.
+    if (
+      idle &&
+      motionActive &&
+      this.ignitionComplete &&
+      !this.getSelectedSlug()
+    ) {
+      this.cameraRig?.driftAzimuth(delta);
+    }
   }
 
   private applyQualitySettings(): void {
