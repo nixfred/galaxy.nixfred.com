@@ -1,6 +1,8 @@
-# CLAUDE.md - galaxy.nixfred.com
+# CLAUDE.md
 
-> Repo law for NIXFRED GALAXY. Global Larry rules live in `~/.claude/CLAUDE.md`; this file adds the project contract on top.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+> Repo law for NIXFRED GALAXY. Global Larry rules live in `~/.claude/CLAUDE.md`; this file adds the project contract on top. The playbook that produced this project is `BUILD.md`; the self-assignment that drives the build is `GOAL.md`.
 
 ## What this project is
 
@@ -50,4 +52,49 @@ NIXFRED GALAXY: an interactive star map of Fred Nix's complete public body of wo
 
 ## Commands
 
-The toolchain is scaffolded in Phase 1. Once `package.json` exists, the required scripts are: `dev`, `build`, `preview`, `format`, `format:check`, `lint`, `typecheck`, `astro:check`, `data:sync`, `data:validate`, `test`, `test:unit`, `test:e2e`, `test:a11y`, `test:visual`, `test:performance`, `check:links`, `check:all`. Update this section with exact usage when they land.
+Bun is the runtime and package manager (pinned in `.bun-version`). `bun install --frozen-lockfile` to set up.
+
+| Task | Command |
+|------|---------|
+| Dev server | `bun run dev` |
+| Production build (emits `dist/`) | `bun run build` |
+| Preview the built site | `bunx astro preview --port 4741` |
+| The full pre-commit gate (mirrors CI) | `bun run check:all` |
+| Format / lint / typecheck | `bun run format` · `bun run lint` · `bun run typecheck` · `bun run astro:check` |
+| Data pipeline | `bun run data:sync` (refresh snapshot) · `bun run data:validate` (F1 anchors, F2 hero edges, schema) · `bun run data:census` (DR011 coverage) |
+| Unit tests (Vitest) | `bun run test:unit` |
+| A single unit test | `bunx vitest run tests/unit/pathfind.test.ts` |
+| Browser tests (Playwright) | `bunx playwright test --project=e2e` (Chromium) · `--project=e2e-webkit` · `--project=a11y` (axe) |
+| A single browser spec | `bunx playwright test --project=e2e tests/e2e/map-select.spec.ts` |
+| Visual / performance | `bun run test:visual` · `bun run test:performance` |
+| Regenerate the OG card | `bun run og:generate` |
+
+Playwright starts its own `astro preview` on port 4741; do not run a dev server on that port during tests. The visual suite uses committed darwin baselines (the F29 reference device) and is not in CI; regenerate with `bunx playwright test --project=visual --update-snapshots`.
+
+Deploy (Fred authorized wrangler locally): env Cloudflare tokens must be UNSET for wrangler Pages operations, which use the OAuth session. Build with real identity, then Direct Upload:
+
+```bash
+GITHUB_SHA=$(git rev-parse HEAD) GITHUB_REF_NAME=main bun run build
+GITHUB_SHA=$(git rev-parse HEAD) GITHUB_REF_NAME=main bun run scripts/generate-build-info.ts
+env -u CLOUDFLARE_API_TOKEN -u CF_API_TOKEN wrangler pages deploy dist --project-name=galaxy-nixfred-com --branch=main --commit-hash=$(git rev-parse HEAD)
+```
+
+## Code architecture
+
+Astro static site with a single hydration island. The big picture spans several files:
+
+1. **Data flows one direction at build time.** `src/data/portfolio.snapshot.json` (synced from the public `nixfred.com/portfolio.json` by `scripts/sync-catalog.ts`; the source GitHub repo is private, so the live site is the canonical published artifact) is joined with the enrichment layers (`galaxy.enrichment.json`, `relationships.json`, `sectors.json`, `tours.json`) by `src/lib/catalog/merge.ts`, then positioned by `src/lib/graph/layout.ts`. The merged graph is exposed two ways: Astro SSG pages import it directly, and `src/pages/graph.json.ts` prerenders it to `/graph.json` for the client scene to fetch once. No runtime fetch of the upstream catalog (DR010).
+
+2. **The layout is deterministic.** `layout.ts` uses a mulberry32 PRNG seeded from each project slug, so the same catalog revision produces an identical map on every machine and build (proven by hash equality, AC031). Never introduce `Math.random`, `Date.now`, or `new Date()` into the scene or data path.
+
+3. **Atlas is the accessibility surface, the canvas is decoration.** `/atlas/` (`src/pages/atlas/index.astro`) and the per-project pages (`src/pages/project/[slug].astro`, one static page per catalog entry) are the real, crawlable, keyboard-navigable, zero-JS representation. The WebGL canvas is `aria-hidden`. Every feature must remain reachable without WebGL; `src/components/galaxy/GalaxyStage.astro` feature-detects WebGL and falls back to an Atlas link with zero Three.js bytes loaded.
+
+4. **The scene lives in `src/lib/graph/` and Three.js loads lazily.** `GalaxyStage.astro` is the ONLY hydration boundary and dynamically imports the controller only after WebGL detection (the lazy chunk stays under 300 KB gz). Module roles: `renderer.ts` (loop, DPR caps, pause-when-hidden, context-loss), `nodes.ts` (instanced shader stars with additive halos, no post-processing bloom), `sectors.ts` (atmosphere), `lines.ts` (relationship edges with signal pulses), `camera.ts` (the BD33 custom rig: spherical offset, no OrbitControls, no roll, exp damping), `labels.ts` (HTML overlay labels with a hero keep-out), `selection.ts` (raycast picking against invisible hit proxies), `quality.ts` (tiers + FPS watchdog), `pathfind.ts` (BFS shortest path for compare mode), and `controller.ts`.
+
+5. **`controller.ts` is the seam.** It is the only scene module that touches the DOM outside the canvas. Everything above it is pure scene code with no DOM/URL knowledge; `GalaxyStage.astro`'s inline script wires the controller's public API (`select`, `setSectorFilter`, `surpriseMe`, `startTour`, `compareWith`, `getKeyboardOrder`) to the detail panel, command palette, tours, filters, deep links (`src/lib/state/deepLink.ts`, `?p=<slug>` and `?tour=<id>`), and keyboard handling. When adding a map feature, extend the controller API and wire the DOM in the stage script; do not reach into scene modules from the DOM.
+
+6. **Build identity is single-sourced.** `src/lib/buildInfo.ts` reads `process.env.GITHUB_SHA` at SSG time and `scripts/generate-build-info.ts` writes `dist/build.json` with the same derivation (F27: `v<date>-<shortsha>`), so the always-visible footer version (F32) and `/build.json` can never disagree. Local builds without `GITHUB_SHA` render `dev-local`, never a fabricated release.
+
+7. **Delivery is trunk based to `main`.** Seven GitHub Actions workflows (`ci`, `preview`, `production`, `rollback`, `scheduled_checks`, `security`, `sync-catalog`). `ci.yml` builds and sha256-digests `dist` once; `production.yml` deploys that exact artifact only after CI passes on a `main` push (a red push never reaches production). Commit and push directly to `main` at every meaningful step (F31); the pipeline is the quality gate, not a merge button.
+
+Requirement IDs (FR/DR/VR/AR/PR/SR/AN/IN and AC/WC) are stable and referenced throughout code comments and tests. When touching behavior, cite the ID it satisfies.
