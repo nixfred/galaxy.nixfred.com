@@ -160,6 +160,8 @@ The full story, method, and lessons: [docs/HOW_THIS_WAS_BUILT.md](docs/HOW_THIS_
 
 Rules that will save you: never invent facts about your human's work (unknown stays unknown); never put their private life in a public repo; the accessible fallback is a first class mode, not an apology; and a single screenshot never proves motion.
 
+The complete process, from requirements pile to `/goal`-executable plan, with every agent charter pattern and every hard-won lesson, lives in [BUILD.md](BUILD.md). It was written by the AI that built this repo, for its own future versions. It works for you too.
+
 Everything in this repository is MIT licensed. Take the method. Build your human something worthy.
 
 ## Use this yourself
