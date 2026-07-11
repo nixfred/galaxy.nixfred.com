@@ -238,6 +238,19 @@ const sectors = sectorsSchema
       >
       <button
         type="button"
+        class="btn btn-secondary"
+        id="galaxy-panel-pin"
+        data-testid="panel-pin"
+        aria-pressed="false">Pin</button
+      >
+      <button
+        type="button"
+        class="btn btn-secondary"
+        id="galaxy-panel-share"
+        data-testid="panel-share">Share</button
+      >
+      <button
+        type="button"
         class="btn btn-tertiary"
         id="galaxy-panel-close"
         data-testid="panel-close">Close</button
@@ -460,6 +473,11 @@ const sectors = sectorsSchema
       panelRelated.append(li);
     }
 
+    // Pin state (FR057, FR058): session-only, no account, never leaves the
+    // browser tab.
+    panelPin.setAttribute('aria-pressed', String(pinnedSlugs.has(slug)));
+    panelPin.textContent = pinnedSlugs.has(slug) ? 'Pinned' : 'Pin';
+
     const wasHidden = panel.hidden;
     panel.hidden = false;
     if (wasHidden) {
@@ -468,6 +486,45 @@ const sectors = sectorsSchema
       panelClose.focus();
     }
   }
+
+  const panelPin = document.getElementById(
+    'galaxy-panel-pin',
+  ) as HTMLButtonElement;
+  const panelShare = document.getElementById(
+    'galaxy-panel-share',
+  ) as HTMLButtonElement;
+  const pinnedSlugs = new Set<string>(
+    JSON.parse(sessionStorage.getItem('galaxy-pins') ?? '[]') as string[],
+  );
+
+  panelPin.addEventListener('click', () => {
+    const slug = controller?.getSelectedSlug();
+    if (!slug) return;
+    if (pinnedSlugs.has(slug)) pinnedSlugs.delete(slug);
+    else pinnedSlugs.add(slug);
+    sessionStorage.setItem('galaxy-pins', JSON.stringify([...pinnedSlugs]));
+    panelPin.setAttribute('aria-pressed', String(pinnedSlugs.has(slug)));
+    panelPin.textContent = pinnedSlugs.has(slug) ? 'Pinned' : 'Pin';
+  });
+
+  panelShare.addEventListener('click', async () => {
+    // FR060: copy a stable link for the active project state.
+    const link = window.location.href;
+    try {
+      await navigator.clipboard.writeText(link);
+      panelShare.textContent = 'Copied';
+      window.setTimeout(() => {
+        panelShare.textContent = 'Share';
+      }, 1500);
+    } catch {
+      // Clipboard blocked (permissions or insecure context): fall back to
+      // selecting the URL so the visitor can copy manually.
+      panelShare.textContent = 'Copy from address bar';
+      window.setTimeout(() => {
+        panelShare.textContent = 'Share';
+      }, 2500);
+    }
+  });
 
   panelClose.addEventListener('click', () => {
     exitCompareMode();
