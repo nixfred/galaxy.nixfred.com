@@ -134,6 +134,19 @@ export class SceneRenderer {
     return this.running;
   }
 
+  // One synchronous frame outside the RAF loop. Hidden tabs never receive
+  // requestAnimationFrame callbacks, so a page loaded in a background tab
+  // would otherwise reveal a black canvas the moment it becomes visible.
+  // Pausing continuous rendering while hidden (AC038) still holds; this is
+  // first-paint correctness, not background animation.
+  renderOnce(): void {
+    if (this.disposed) return;
+    for (let i = 0; i < this.frameCallbacks.length; i++) {
+      this.frameCallbacks[i]!(0, this.timer.getElapsed());
+    }
+    this.renderer.render(this.scene, this.camera);
+  }
+
   private readonly loop = (timestamp: number): void => {
     if (!this.running) return;
     this.rafId = requestAnimationFrame(this.loop);

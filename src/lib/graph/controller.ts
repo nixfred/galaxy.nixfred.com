@@ -183,6 +183,11 @@ export class GalaxyController {
       this.renderer.onFrame((delta, elapsed) => this.frame(delta, elapsed)),
     );
     this.renderer.start();
+    // First-paint correctness: a hidden tab gets no RAF callbacks, so draw
+    // one synchronous frame now. Without this, a page loaded in a background
+    // tab reveals a black canvas when it becomes visible (found by real
+    // browser evidence during Phase 3a verification).
+    this.renderer.renderOnce();
 
     opts.onStateChange('online');
   }
