@@ -419,3 +419,7 @@ Executed by Larry during Gate G0. Every value verified at execution time; creden
 | Secret `CLOUDFLARE_API_TOKEN` | OPEN ITEM. Requires Fred to mint a token in the Cloudflare dashboard scoped to Account, Cloudflare Pages, Edit, and nothing more (section 3.5 of `docs/CI_CD.md`). Neither existing local token holds Pages access, and neither can mint tokens by API. Gate G0 remains open on this single item |
 
 Zone identifiers recorded: `nixfred.com` `0f553c816de4c7f59d6dfbfe1712aafd`, `nixfred.tech` `c288a29ecab13b9b7f97b77c801c9cad` (public zone metadata, stored as variables per the contract).
+
+### Incident note, 2026-07-11
+
+Commit `2b58258` accidentally included `.wrangler/cache/` files created by the Pages project creation, exposing the Cloudflare account identifier in public history. Assessment: the account identifier is not a credential, cannot be used to authenticate, and is treated as protected by convention only (`docs/CI_CD.md` 3.5); Cloudflare account IDs appear in dashboard URLs and are not rotatable. Action taken: `.wrangler/` removed from tracking and added to `.gitignore` in the immediate follow-up commit. No token, key, or secret value was exposed. Recorded per the `04` exposure procedure.
