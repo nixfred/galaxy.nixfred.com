@@ -427,3 +427,12 @@ Commit `2b58258` accidentally included `.wrangler/cache/` files created by the P
 ### Provisioning addendum, 2026-07-11
 
 GitHub security suite enabled after the first Dependabot PR exposed that dependency graph was off (dependency-review-action failed environmental): dependency graph plus Dependabot alerts (`PUT /vulnerability-alerts`), secret scanning ENABLED, push protection ENABLED. Recorded here because scanning state is provisioning, not code.
+
+### Interim deployment record, 2026-07-11 (pre G0 completion)
+
+Fred authorized local wrangler as the deploy path while the CI token remains unminted. Executed:
+
+1. First production Direct Upload from local wrangler OAuth: commit `9a5b163`, deployment `62fc5f22`, live at `https://galaxy-nixfred-com.pages.dev`, verified HTTP 200 with matching `/build.json` (version `v2026-07-11-9a5b163`).
+2. Custom domain `galaxy.nixfred.com` attached to the Pages project via the Pages API (OAuth token, `pages:write`). Pages did NOT auto-create DNS.
+3. CNAME `galaxy -> galaxy-nixfred-com.pages.dev` (proxied) created in the nixfred.com zone. Discovery: the env token stored as `CF_DNS_READ_TOKEN` holds Zone DNS WRITE, not read only. It is over-scoped for the census. ACTION ITEM: replace the repository secret with a true read-only token when Fred mints credentials; the census never needed write and R9 assumed read only.
+4. Build-in-public ruling applied: the domain serves the construction shell while phases proceed; full launch acceptance (headers, AC053 evidence, Fred review) still closes at Gate G6. CI deployments take over the moment `CLOUDFLARE_API_TOKEN` lands (the credential guard self-heals).
