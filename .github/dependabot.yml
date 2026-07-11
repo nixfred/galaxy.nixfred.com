@@ -13,6 +13,12 @@ updates:
       bun-dependencies:
         patterns:
           - '*'
+    ignore:
+      # typescript-eslint does not support TypeScript 6+ yet
+      # (typescript-estree crashes on ts.ModuleKind.Cjs). Remove this ignore
+      # when typescript-eslint ships support; CI blocks the bump meanwhile.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
     open-pull-requests-limit: 5
     labels:
       - 'dependencies'
