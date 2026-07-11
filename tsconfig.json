@@ -1,10 +1,9 @@
 {
   "extends": "astro/tsconfigs/strictest",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
-      "@lib/*": ["src/lib/*"],
-      "@data/*": ["src/data/*"]
+      "@lib/*": ["./src/lib/*"],
+      "@data/*": ["./src/data/*"]
     },
     "types": ["vitest/globals", "bun", "node"]
   },
