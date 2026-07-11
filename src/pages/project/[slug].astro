@@ -1,0 +1,158 @@
+---
+// Crawlable project pages (FR054-FR056). One static page per catalog node,
+// built from the same merge + layout pipeline the rest of the data layer
+// uses. Only fields present in the data are rendered; nothing is invented.
+// Astro runs getStaticPaths in an isolated build phase that cannot see
+// module-scope consts computed outside it, so all data loading and joining
+// happens inside the function and the fully-resolved result is passed
+// through props rather than recomputed in the render body.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { mergeCatalog, type GraphNode } from '@lib/catalog/merge';
+import { layoutNodes, type PositionedNode } from '@lib/graph/layout';
+import {
+  snapshotSchema,
+  enrichmentSchema,
+  sectorsSchema,
+  relationshipsSchema,
+  type Sector,
+} from '@lib/catalog/schema';
+import snapshotRaw from '@data/portfolio.snapshot.json';
+import enrichmentRaw from '@data/galaxy.enrichment.json';
+import sectorsRaw from '@data/sectors.json';
+import relationshipsRaw from '@data/relationships.json';
+
+interface RelatedEntry {
+  other: GraphNode;
+  reason: string;
+}
+
+interface ProjectPageProps {
+  node: PositionedNode;
+  sector: Sector;
+  related: RelatedEntry[];
+  statusHeader: string;
+}
+
+export function getStaticPaths() {
+  const snapshot = snapshotSchema.parse(snapshotRaw);
+  const enrichment = enrichmentSchema.parse(enrichmentRaw).records;
+  const sectors = sectorsSchema.parse(sectorsRaw).sectors;
+  const relationships = relationshipsSchema.parse(relationshipsRaw).edges;
+  const { nodes } = mergeCatalog(snapshot, enrichment, sectors);
+  const positioned = layoutNodes(nodes, sectors);
+  const nodesBySlug = new Map(nodes.map((n) => [n.slug, n]));
+  // node.sector is the wider GraphNode `string`, not the narrower SECTOR_IDS
+  // union sector.id infers to, so the map key is widened to match.
+  const sectorsById = new Map<string, Sector>(sectors.map((s) => [s.id, s]));
+
+  return positioned.map((node) => {
+    const sector = sectorsById.get(node.sector);
+    if (!sector) {
+      throw new Error(`project page: unknown sector for ${node.slug}`);
+    }
+
+    const related: RelatedEntry[] = relationships
+      .filter((edge) => edge.source === node.slug || edge.target === node.slug)
+      .map((edge) => {
+        const otherSlug = edge.source === node.slug ? edge.target : edge.source;
+        const other = nodesBySlug.get(otherSlug);
+        return other ? { other, reason: edge.reason } : null;
+      })
+      .filter((entry): entry is RelatedEntry => Boolean(entry));
+
+    const statusHeader = [
+      `SECTOR: ${sector.mapLabel}`,
+      node.status ? `STATUS: ${node.status.toUpperCase()}` : null,
+      node.launchDate ? `LAUNCHED: ${node.launchDate}` : null,
+      `REL: ${related.length}`,
+    ]
+      .filter((part): part is string => Boolean(part))
+      .join(' // ');
+
+    return {
+      params: { slug: node.slug },
+      props: { node, sector, related, statusHeader },
+    };
+  });
+}
+
+type Props = ProjectPageProps;
+
+const { node, sector, related, statusHeader } = Astro.props;
+---
+
+<BaseLayout title={`${node.title} // NIXFRED GALAXY`} description={node.desc}>
+  <header class="crumb-nav">
+    <a href="/">NIXFRED GALAXY</a>
+    <span class="crumb-nav__sep" aria-hidden="true">//</span>
+    <a href="/atlas/">Atlas</a>
+    <span class="crumb-nav__sep" aria-hidden="true">//</span>
+    <span class="crumb-nav__current">{node.title}</span>
+  </header>
+  <main id="main" class="project">
+    <div class="project-header" data-sector={sector.id}>
+      <p class="project-header__sector">{sector.mapLabel}</p>
+      <h1 class="project-title">{node.title}</h1>
+    </div>
+    <p class="project-status" data-testid="project-status-header">
+      {statusHeader}
+    </p>
+    <p class="project-desc">{node.desc}</p>
+
+    {
+      node.technologies && node.technologies.length > 0 && (
+        <section class="project-panel">
+          <h2 class="project-panel__heading">Technologies</h2>
+          <ul class="project-tags">
+            {node.technologies.map((tech) => (
+              <li>{tech}</li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      related.length > 0 && (
+        <section class="project-panel">
+          <h2 class="project-panel__heading">Related Projects</h2>
+          <ul class="project-relationships">
+            {related.map(({ other, reason }) => (
+              <li>
+                <a href={`/project/${other.slug}/`}>{other.title}</a>
+                <p>{reason}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <div class="project-actions">
+      <a
+        class="btn btn-primary"
+        href={node.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-testid="open-project"
+      >
+        Open Project
+      </a>
+      <a class="btn btn-secondary" href="/atlas/" data-testid="return-to-atlas">
+        Return to Atlas
+      </a>
+      {
+        node.repoUrl && (
+          <a
+            class="btn btn-tertiary"
+            href={node.repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View Source
+          </a>
+        )
+      }
+    </div>
+  </main>
+</BaseLayout>

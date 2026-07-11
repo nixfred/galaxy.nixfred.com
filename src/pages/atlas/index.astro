@@ -1,0 +1,165 @@
+---
+// Atlas mode (FR049-FR053): a complete, first-class HTML representation of
+// the catalog, not a fallback. With zero JS every project is visible and
+// linked (AC021); the search input and sector filter buttons below are pure
+// progressive enhancement, wired from src/scripts/atlas-filter.ts so the CSP
+// never needs an inline-script allowance.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { mergeCatalog, type GraphNode } from '@lib/catalog/merge';
+import {
+  snapshotSchema,
+  enrichmentSchema,
+  sectorsSchema,
+  type Sector,
+} from '@lib/catalog/schema';
+import snapshotRaw from '@data/portfolio.snapshot.json';
+import enrichmentRaw from '@data/galaxy.enrichment.json';
+import sectorsRaw from '@data/sectors.json';
+
+const snapshot = snapshotSchema.parse(snapshotRaw);
+const enrichment = enrichmentSchema.parse(enrichmentRaw).records;
+const sectors = sectorsSchema
+  .parse(sectorsRaw)
+  .sectors.slice()
+  .sort((a, b) => a.order - b.order);
+const { nodes } = mergeCatalog(snapshot, enrichment, sectors);
+
+const bySector = new Map<string, GraphNode[]>(sectors.map((s) => [s.id, []]));
+for (const node of nodes) {
+  bySector.get(node.sector)?.push(node);
+}
+for (const list of bySector.values()) {
+  list.sort((a, b) => a.title.localeCompare(b.title));
+}
+
+function hostFromUrl(url: string): string {
+  return new URL(url).hostname;
+}
+
+// BD13 status line: SECTOR // STATUS when known // FEATURED when true //
+// ANCHOR when true. Personal keeps the memorial-quiet restraint (BD03): no
+// FEATURED badge in that sector, regardless of the upstream Featured flag.
+function statusLine(node: GraphNode, sector: Sector): string {
+  const parts = [`SECTOR: ${sector.mapLabel}`];
+  if (node.status) parts.push(`STATUS: ${node.status.toUpperCase()}`);
+  if (node.featured && sector.id !== 'personal') parts.push('FEATURED');
+  if (node.anchor) parts.push('ANCHOR');
+  return parts.join(' // ');
+}
+
+function searchable(node: GraphNode, sector: Sector): string {
+  return [
+    node.title,
+    node.desc,
+    sector.label,
+    sector.mapLabel,
+    ...(node.technologies ?? []),
+  ]
+    .join(' ')
+    .toLowerCase();
+}
+
+const projectCount = nodes.length;
+const sectorCount = sectors.length;
+---
+
+<BaseLayout
+  title="Atlas // NIXFRED GALAXY"
+  description="The complete NIXFRED GALAXY catalog as a searchable, filterable list: every project, every sector, no WebGL required."
+>
+  <header class="crumb-nav">
+    <a href="/">NIXFRED GALAXY</a>
+    <span class="crumb-nav__sep" aria-hidden="true">//</span>
+    <span class="crumb-nav__current">Atlas</span>
+  </header>
+  <main id="main" class="atlas">
+    <div class="atlas-header">
+      <h1>Atlas</h1>
+      <p class="mono-meta" data-testid="atlas-status-header">
+        ATLAS // COMPLETE CATALOG // {projectCount} PROJECTS // {sectorCount}
+        SECTORS
+      </p>
+    </div>
+
+    <div class="atlas-controls">
+      <input
+        type="search"
+        id="atlas-search"
+        class="atlas-search"
+        placeholder="Search projects, sectors, technologies..."
+        aria-label="Search projects"
+      />
+      <div class="atlas-filters" role="group" aria-label="Filter by sector">
+        {
+          sectors.map((sector) => (
+            <button
+              type="button"
+              class="atlas-filter"
+              data-sector-filter={sector.id}
+              aria-pressed="false"
+            >
+              {sector.mapLabel}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <p class="atlas-count mono-meta" id="atlas-count" data-testid="atlas-count">
+      Showing {projectCount} of {projectCount} projects
+    </p>
+
+    <div class="atlas-sections">
+      {
+        sectors.map((sector) => {
+          const items = bySector.get(sector.id) ?? [];
+          return (
+            <section
+              class="atlas-section"
+              data-sector={sector.id}
+              aria-labelledby={`sector-${sector.id}`}
+            >
+              <h2 class="atlas-section__heading" id={`sector-${sector.id}`}>
+                {sector.mapLabel}
+              </h2>
+              <p class="atlas-section__desc">{sector.description}</p>
+              <ul class="atlas-list">
+                {items.map((node) => (
+                  <li
+                    class="atlas-item"
+                    data-testid="atlas-item"
+                    data-slug={node.slug}
+                    data-sector={sector.id}
+                    data-search={searchable(node, sector)}
+                  >
+                    <div class="atlas-item__title-row">
+                      {node.anchor && (
+                        <span class="anchor-marker" aria-hidden="true">
+                          ◆
+                        </span>
+                      )}
+                      <a
+                        class="atlas-item__link"
+                        href={`/project/${node.slug}/`}
+                      >
+                        {node.title}
+                      </a>
+                      <span class="atlas-item__host">
+                        {hostFromUrl(node.url)}
+                      </span>
+                    </div>
+                    <p class="atlas-item__desc">{node.desc}</p>
+                    <p class="atlas-item__status">{statusLine(node, sector)}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })
+      }
+    </div>
+  </main>
+  <script>
+    import '../../scripts/atlas-filter';
+  </script>
+</BaseLayout>

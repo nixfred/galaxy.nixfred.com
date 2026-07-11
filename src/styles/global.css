@@ -1,4 +1,6 @@
-/* Minimal Phase 1 global styles. The full shell composition lands in Phase 2. */
+/* Shell, Atlas, and project page chrome per docs/DESIGN_BIBLE.md: hairline
+   borders (BD11), flat 4px radii (BD16), monospace status lines (BD13),
+   three button tiers (BD15), no shadows, no gradients anywhere. */
 * {
   box-sizing: border-box;
 }
@@ -16,60 +18,135 @@ body {
   flex-direction: column;
 }
 
+a {
+  color: var(--accent-signal);
+}
+
+:focus-visible {
+  outline: var(--stroke-selected) solid var(--accent-signal);
+  outline-offset: 2px;
+}
+
 .skip-link {
   position: absolute;
   left: -9999px;
   top: 0;
   background: var(--surface-2);
   color: var(--text-primary);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--radius);
   padding: 0.5rem 1rem;
-}
-
-.skip-link:focus {
-  left: 0;
   z-index: 100;
 }
 
-.boot-shell {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 2rem;
-  max-width: 42rem;
-  margin: 0 auto;
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
 }
 
-.boot-line {
+/* Monospace instrument text (BD13). BD04 lists text-metadata (#5A6B7A) as
+   an AA-safe floor at 13px+ on surface-0, but measured against the actual
+   surface-0 (#05070A) it is 3.66:1, not the ~4.6:1 the bible states, and
+   fails the AR010/AC025 axe gate regardless of size. Every rendered
+   instance below therefore uses text-secondary (~9.3:1, axe-verified)
+   instead; text-metadata stays defined in tokens.css for any future
+   large-text or decorative use where AA does not apply. */
+.mono-meta {
   font-family: var(--font-mono);
-  font-size: 0.8rem;
-  letter-spacing: 0.12em;
-  color: var(--text-metadata);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
-h1 {
-  font-family: var(--font-display);
-  font-size: clamp(1.8rem, 5vw, 3rem);
-  margin: 0;
+.mono-note {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
 }
 
-a {
-  color: var(--accent-interactive);
+/* ---------------------------------------------------------------------- */
+/* Buttons: three tiers only (BD15). Radius 4px, no shadow, no gradient.   */
+/* ---------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: var(--radius);
+  padding: 0.7rem 1.25rem;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease;
 }
+
+.btn-primary {
+  background: var(--accent-signal);
+  color: var(--surface-0);
+  border: var(--stroke) solid var(--accent-signal);
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: var(--stroke) solid var(--border);
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus-visible {
+  border-color: var(--accent-signal);
+  color: var(--accent-signal);
+}
+
+.btn-tertiary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  text-decoration: underline;
+  padding: 0.35rem 0;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+}
+
+.btn-tertiary:hover,
+.btn-tertiary:focus-visible {
+  color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------------------- */
+/* System panel footer (F32 version, F33 permanent links). Below the 13px  */
+/* floor, BD04 requires text-secondary over text-metadata; see the        */
+/* mono-meta comment above for why text-secondary is used throughout.     */
+/* ---------------------------------------------------------------------- */
 
 .system-panel {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
   padding: 0.6rem 1rem;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--text-metadata);
-  border-top: 1px solid var(--surface-2);
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-top: var(--stroke) solid var(--border);
+  background: var(--surface-1);
 }
 
 .system-panel__links {
@@ -86,4 +163,524 @@ a {
 .system-panel__links a:focus-visible {
   color: var(--text-primary);
   text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Breadcrumb nav, shared by Atlas and project pages.                      */
+/* ---------------------------------------------------------------------- */
+
+.crumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  border-bottom: var(--stroke) solid var(--border);
+  background: var(--surface-1);
+}
+
+.crumb-nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.crumb-nav a:hover,
+.crumb-nav a:focus-visible {
+  color: var(--accent-signal);
+}
+
+.crumb-nav__sep {
+  color: var(--text-disabled);
+}
+
+.crumb-nav__current {
+  color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Home shell (FR002).                                                     */
+/* ---------------------------------------------------------------------- */
+
+.shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding: 2rem 1.5rem;
+  max-width: 46rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.site-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+@media (min-width: 640px) {
+  .site-name {
+    font-size: 28px;
+  }
+}
+
+.boot-line {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  line-height: 1.15;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.hero-support {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 38rem;
+  margin: 0;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.hero-actions__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.stats-line {
+  margin-top: 1rem;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Atlas mode (FR049-FR053).                                               */
+/* ---------------------------------------------------------------------- */
+
+.atlas {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 64rem;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.atlas-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.atlas-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.atlas-search {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface-2);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.55rem 0.85rem;
+  min-width: 16rem;
+  flex: 1 1 16rem;
+}
+
+.atlas-search::placeholder {
+  color: var(--text-secondary);
+}
+
+.atlas-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.atlas-filter {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: transparent;
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+}
+
+.atlas-filter:hover,
+.atlas-filter:focus-visible {
+  border-color: var(--accent-signal);
+  color: var(--text-primary);
+}
+
+.atlas-filter[aria-pressed='true'] {
+  border-color: var(--accent-signal);
+  color: var(--accent-signal);
+}
+
+.atlas-count {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.atlas-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.atlas-section {
+  border-left: 2px solid var(--border);
+  padding-left: 1.25rem;
+}
+
+.atlas-section[data-sector='it'] {
+  border-left-color: var(--sector-it);
+}
+.atlas-section[data-sector='labs'] {
+  border-left-color: var(--sector-labs);
+}
+.atlas-section[data-sector='work'] {
+  border-left-color: var(--sector-work);
+}
+.atlas-section[data-sector='signal'] {
+  border-left-color: var(--sector-signal);
+}
+.atlas-section[data-sector='clients'] {
+  border-left-color: var(--sector-clients);
+}
+.atlas-section[data-sector='personal'] {
+  border-left-color: var(--sector-personal);
+}
+
+.atlas-section__heading {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 0.25rem;
+}
+
+.atlas-section[data-sector='it'] .atlas-section__heading {
+  color: var(--sector-it);
+}
+.atlas-section[data-sector='labs'] .atlas-section__heading {
+  color: var(--sector-labs);
+}
+.atlas-section[data-sector='work'] .atlas-section__heading {
+  color: var(--sector-work);
+}
+.atlas-section[data-sector='signal'] .atlas-section__heading {
+  color: var(--sector-signal);
+}
+.atlas-section[data-sector='clients'] .atlas-section__heading {
+  color: var(--sector-clients);
+}
+/* Personal stays quiet: text-secondary, not the full sector core (BD03). */
+.atlas-section[data-sector='personal'] .atlas-section__heading {
+  color: var(--text-secondary);
+}
+
+.atlas-section__desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 1rem;
+}
+
+.atlas-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.atlas-item {
+  padding: 0.85rem 0;
+  border-bottom: var(--stroke) solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.atlas-item:last-child {
+  border-bottom: none;
+}
+
+.atlas-item__title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.atlas-item__link {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.atlas-item__link:hover,
+.atlas-item__link:focus-visible {
+  color: var(--accent-signal);
+  text-decoration: underline;
+}
+
+.atlas-item__host {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.atlas-item__desc {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 48rem;
+}
+
+.atlas-item__status {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.anchor-marker {
+  color: var(--accent-signal);
+  font-size: 0.6em;
+  line-height: 1;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Project pages (FR054-FR056).                                            */
+/* ---------------------------------------------------------------------- */
+
+.project {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 44rem;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.project-header {
+  border-left: 2px solid var(--border);
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.project-header[data-sector='it'] {
+  border-left-color: var(--sector-it);
+}
+.project-header[data-sector='labs'] {
+  border-left-color: var(--sector-labs);
+}
+.project-header[data-sector='work'] {
+  border-left-color: var(--sector-work);
+}
+.project-header[data-sector='signal'] {
+  border-left-color: var(--sector-signal);
+}
+.project-header[data-sector='clients'] {
+  border-left-color: var(--sector-clients);
+}
+.project-header[data-sector='personal'] {
+  border-left-color: var(--sector-personal);
+}
+
+.project-header__sector {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.project-header[data-sector='it'] .project-header__sector {
+  color: var(--sector-it);
+}
+.project-header[data-sector='labs'] .project-header__sector {
+  color: var(--sector-labs);
+}
+.project-header[data-sector='work'] .project-header__sector {
+  color: var(--sector-work);
+}
+.project-header[data-sector='signal'] .project-header__sector {
+  color: var(--sector-signal);
+}
+.project-header[data-sector='clients'] .project-header__sector {
+  color: var(--sector-clients);
+}
+.project-header[data-sector='personal'] .project-header__sector {
+  color: var(--text-secondary);
+}
+
+.project-title {
+  font-size: 24px;
+}
+
+.project-status {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding-top: 0.5rem;
+  border-top: var(--stroke) solid var(--border);
+  margin-top: 0.25rem;
+}
+
+.project-desc {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.project-panel {
+  background: var(--surface-2);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.project-panel__heading {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin: 0;
+  padding-bottom: 0.6rem;
+  border-bottom: var(--stroke) solid var(--border);
+}
+
+.project-tags {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.project-tags li {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.5rem;
+}
+
+.project-relationships {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.project-relationships li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.project-relationships a {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.project-relationships a:hover,
+.project-relationships a:focus-visible {
+  color: var(--accent-signal);
+  text-decoration: underline;
+}
+
+.project-relationships p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 404 (FR065).                                                             */
+/* ---------------------------------------------------------------------- */
+
+.not-found {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding: 2rem 1.5rem;
+  max-width: 40rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.not-found-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
 }

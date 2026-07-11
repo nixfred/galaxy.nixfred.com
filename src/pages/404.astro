@@ -1,0 +1,30 @@
+---
+// FR065: a styled not-found page with search, Atlas, and a way home.
+// Astro emits this as dist/404.html for static output.
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Signal Lost // NIXFRED GALAXY"
+  description="This coordinate does not exist in the catalog. Return to the Atlas or the map."
+>
+  <main id="main" class="not-found">
+    <p class="boot-line" data-testid="not-found-boot-line">
+      SIGNAL LOST // COORDINATES UNKNOWN
+    </p>
+    <h1>This coordinate does not exist.</h1>
+    <p class="hero-support">
+      The page you asked for is not in the catalog. Search the Atlas, return to
+      the map, or head back to the source site.
+    </p>
+    <div class="not-found-actions">
+      <a class="btn btn-primary" href="/atlas/" data-testid="not-found-search"
+        >Search the Atlas</a
+      >
+      <a class="btn btn-secondary" href="/">Return to the Map</a>
+      <a class="btn btn-tertiary" href="https://nixfred.com" rel="noopener"
+        >nixfred.com</a
+      >
+    </div>
+  </main>
+</BaseLayout>

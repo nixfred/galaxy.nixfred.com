@@ -1,23 +1,56 @@
 ---
-// Phase 1 placeholder shell. The full FR002 shell ships in Phase 2.
-// This page exists so the pipeline has a real artifact to validate end to end.
+// FR002: the full shell. Site name, boot line, primary statement, three
+// entry actions, quiet stats derived from real catalog data, and the
+// existing F32/F33 system panel from BaseLayout. Zero JS required: every
+// action here is a plain link.
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { mergeCatalog } from '@lib/catalog/merge';
+import {
+  snapshotSchema,
+  enrichmentSchema,
+  sectorsSchema,
+} from '@lib/catalog/schema';
+import snapshotRaw from '@data/portfolio.snapshot.json';
+import enrichmentRaw from '@data/galaxy.enrichment.json';
+import sectorsRaw from '@data/sectors.json';
+
+const snapshot = snapshotSchema.parse(snapshotRaw);
+const enrichment = enrichmentSchema.parse(enrichmentRaw).records;
+const sectors = sectorsSchema.parse(sectorsRaw).sectors;
+const { nodes } = mergeCatalog(snapshot, enrichment, sectors);
+
+const projectCount = nodes.length;
+const sectorCount = sectors.length;
 ---
 
 <BaseLayout
   title="NIXFRED GALAXY"
   description="Every project. One connected system. An interactive star map of Fred Nix's complete body of work."
 >
-  <main id="main" class="boot-shell">
+  <header class="crumb-nav">
+    <span class="site-name">NIXFRED GALAXY</span>
+  </header>
+  <main id="main" class="shell">
     <p class="boot-line" data-testid="boot-line">
-      NIXFRED GALAXY // CATALOG COMING ONLINE
+      NIXFRED GALAXY // CATALOG ONLINE
     </p>
     <h1>Every project. One connected system.</h1>
-    <p>
-      The map is under construction, gate by gate, in public. Follow the build
-      at <a href="https://github.com/nixfred/galaxy.nixfred.com" rel="noopener"
-        >github.com/nixfred/galaxy.nixfred.com</a
-      >.
+    <p class="hero-support">
+      Move through the work as a living map. Follow the lines between AI,
+      infrastructure, security, space, clients, and memory.
+    </p>
+    <div class="hero-actions">
+      <div class="hero-actions__group">
+        <a class="btn btn-primary" href="/atlas/">Enter the Map</a>
+        <span class="mono-note">Map mode arrives at Phase 3</span>
+      </div>
+      <a class="btn btn-secondary" href="/atlas/">Open Atlas</a>
+      <a class="btn btn-tertiary" href="https://nixfred.com" rel="noopener"
+        >See the Resume</a
+      >
+    </div>
+    <p class="mono-meta stats-line" data-testid="catalog-stats">
+      {projectCount} projects // {sectorCount} sectors
     </p>
   </main>
 </BaseLayout>

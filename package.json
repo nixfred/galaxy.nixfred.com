@@ -33,6 +33,7 @@
     "check:all": "bun run format:check && bun run lint && bun run typecheck && bun run astro:check && bun run data:validate && bun run test:unit && bun run build && bun run scripts/report-bundle.ts && bun run check:links"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
     "astro": "^7.0.7",
     "three": "^0.185.1"
   },

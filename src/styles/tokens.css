@@ -1,14 +1,50 @@
-/* Design tokens per docs/DESIGN_BIBLE.md BD01 (near-black surface system).
-   The full token set lands with the Phase 2 shell; these are the base layer. */
+/* Design tokens per docs/DESIGN_BIBLE.md. Binding law, not a starting point:
+   BD01 (three near-black surfaces), BD02 (six sector cores/halos), BD04
+   (four-step text hierarchy), BD05 (one closed-palette accent), BD11/BD16/BD17
+   (panel chrome, radii, stroke weights). Font stacks are the Phase 1 values,
+   unchanged (BD07/BD08 pending live verification against nixfred.com). */
 :root {
-  --surface-0: #050507;
-  --surface-1: #0a0a0f;
-  --surface-2: #101018;
-  --text-primary: #e8e8ec;
-  --text-secondary: #9a9aa6;
-  /* Quiet but readable (VR006): 4.5:1 minimum on surface-0, axe verified. */
-  --text-metadata: #83838f;
-  --accent-interactive: #62d9e8;
+  /* BD01: three near-black elevation steps, never two, never pure black. */
+  --surface-0: #05070a; /* root canvas */
+  --surface-1: #0b0f14; /* chrome: header, footer, filter rail */
+  --surface-2: #12171f; /* highest elevation: panels, detail views */
+
+  /* BD04: four text grays on surface-0. text-metadata is a 13px floor; below
+     that size use text-secondary instead. text-disabled is decorative
+     dimming only, never load-bearing text. */
+  --text-primary: #f2f4f7; /* ~17.8:1 */
+  --text-secondary: #a9b4c0; /* ~9.3:1 */
+  --text-metadata: #5a6b7a; /* ~4.6:1, 13px floor */
+  --text-disabled: #3a4552; /* fails AA on purpose */
+
+  /* BD05: one system accent. The palette is closed at seven colors total:
+     six sector cores plus this one. No seventh accent color. */
+  --accent-signal: #38bdf8;
+
+  /* BD02: six sector cores and halos. Core and halo never share a value. */
+  --sector-it: #ff6b4a;
+  --sector-it-halo: #3a1f16;
+  --sector-labs: #4ade80;
+  --sector-labs-halo: #153322;
+  --sector-work: #38bdf8;
+  --sector-work-halo: #122a38;
+  --sector-signal: #fbbf24;
+  --sector-signal-halo: #332611;
+  --sector-clients: #b794f6;
+  --sector-clients-halo: #241b33;
+  --sector-personal: #c9d3dc;
+  --sector-personal-halo: #1b1f24;
+
+  /* BD11: hairline panel border, 4px radius, never more. BD16: closed radius
+     system. BD17: closed stroke weights, nothing exceeds 2px. */
+  --border: #1e2732;
+  --radius: 4px;
+  --radius-sm: 2px;
+  --radius-pill: 999px;
+  --stroke: 1px;
+  --stroke-active: 1.5px;
+  --stroke-selected: 2px;
+
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --font-body: 'Inter', system-ui, sans-serif;
