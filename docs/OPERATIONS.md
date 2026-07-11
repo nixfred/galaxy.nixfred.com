@@ -397,3 +397,25 @@ bun run data:census
 When it runs. Before the initial public launch the census is a blocking gate: it must report zero uncovered live properties before launch (`docs/GATES.md`, `docs/CI_CD.md`). After launch it runs on the maintenance schedule inside `scheduled_checks.yml` (`docs/CI_CD.md` section 4.5), which opens a tracking issue on any gap.
 
 What to do with a gap. A census-eligible live property missing from the map is resolved by adding the entry upstream to `portfolio.json` in `nixfred/nixfred.github.io` (the canonical identity source per `DR001`), or, when the property is Galaxy specific, to the enrichment layer `src/data/galaxy.enrichment.json`. Never wave a gap through with a silent exception; an editorial exclusion for an already-public, census-eligible property goes through `src/data/census-exclusions.json` with a recorded reason instead, per R9. An upstream addition flows back into Galaxy through the normal catalog sync (section 4); an enrichment or exclusion addition ships through a normal pull request. Re-run the census after the change and confirm the gap is cleared before closing the tracking issue.
+
+## Section 9. Phase 0 provisioning record, 2026-07-11
+
+Executed by Larry during Gate G0. Every value verified at execution time; credentials never echoed.
+
+| Item | Result |
+|------|--------|
+| `gh auth status` | Verified: logged in as `nixfred`, active account |
+| GitHub repository | Created `nixfred/galaxy.nixfred.com`, PUBLIC, default branch `main`, description and homepage set |
+| Branch protection on `main` | Force pushes blocked, deletion blocked, `enforce_admins` on, conversation resolution required, no pre-push status checks (trunk based per decision F31; `production.yml` gating on green `ci.yml` is the quality gate) |
+| Initial push | Planning pack pushed to `main` with tag `milestone/galaxy-planning-pack-2026-07-11` |
+| Initial release | `v2026.07.11-d798e3e`, the planning pack as release notes |
+| GitHub environments | `production` (deployment branch policy: `main` only) and `preview` created |
+| `wrangler whoami` | Verified: OAuth login as frednix@gmail.com works for Pages operations. NOTE: local shells export a `CLOUDFLARE_API_TOKEN` env value that CANNOT access Pages; unset env tokens for interactive wrangler Pages work (known from prior projects) |
+| Cloudflare Pages project | Created `galaxy-nixfred-com`, production branch `main`, will serve at `galaxy-nixfred-com.pages.dev` after the first deployment |
+| Secret `CLOUDFLARE_ACCOUNT_ID` | Set in both `production` and `preview` environments |
+| Secret `CF_DNS_READ_TOKEN` | Set at repository level. Uses an existing token verified to hold zone list plus DNS read on both zones and verified UNABLE to deploy Pages or mint tokens. Functionally census scoped. Replace with a freshly minted dedicated token at any time; rotation procedure in section 6 |
+| Variables | `CF_PAGES_PROJECT=galaxy-nixfred-com`, `PRODUCTION_BRANCH=main`, `PRODUCTION_DOMAIN=galaxy.nixfred.com`, `CF_ZONE_NIXFRED_COM`, `CF_ZONE_NIXFRED_TECH` set at repository level |
+| Dependabot | `.github/dependabot.yml` committed: grouped weekly, bun plus github-actions |
+| Secret `CLOUDFLARE_API_TOKEN` | OPEN ITEM. Requires Fred to mint a token in the Cloudflare dashboard scoped to Account, Cloudflare Pages, Edit, and nothing more (section 3.5 of `docs/CI_CD.md`). Neither existing local token holds Pages access, and neither can mint tokens by API. Gate G0 remains open on this single item |
+
+Zone identifiers recorded: `nixfred.com` `0f553c816de4c7f59d6dfbfe1712aafd`, `nixfred.tech` `c288a29ecab13b9b7f97b77c801c9cad` (public zone metadata, stored as variables per the contract).
