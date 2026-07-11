@@ -35,6 +35,7 @@ export type MapState =
 
 export interface ControllerOptions {
   labelHost: HTMLElement;
+  keepOutEl?: HTMLElement | null;
   reducedMotion: boolean;
   onStateChange: (state: MapState) => void;
   onHover: (change: HoverChange) => void;
@@ -90,6 +91,7 @@ export class GalaxyController {
   private filteredSlugs = new Set<string>();
   private activeTour: SceneTour | null = null;
   private tourStep = -1;
+  private keepOutEl: HTMLElement | null = null;
 
   private readonly pointers = new Map<number, PointerState>();
   private dragButton: number | null = null;
@@ -106,6 +108,7 @@ export class GalaxyController {
     this.canvas = canvas;
     this.opts = opts;
     this.reducedMotion = opts.reducedMotion;
+    this.keepOutEl = opts.keepOutEl ?? null;
 
     opts.onStateChange('catalog-loading');
     const res = await fetch('/graph.json');
@@ -496,6 +499,21 @@ export class GalaxyController {
     this.atmosphere?.update(delta, this.motionElapsed);
     this.lines?.update(delta, this.motionElapsed);
     if (this.renderer && this.labels) {
+      // Feed the hero copy bounds as a label keep-out so star labels never
+      // collide with the reading text (WC03/WC10). Recomputed each frame is
+      // cheap and survives layout changes; sampled from the canvas rect space.
+      if (this.keepOutEl && this.canvas) {
+        const hero = this.keepOutEl.getBoundingClientRect();
+        const c = this.canvas.getBoundingClientRect();
+        this.labels.setKeepOut(
+          new DOMRect(
+            hero.left - c.left,
+            hero.top - c.top,
+            hero.width,
+            hero.height,
+          ),
+        );
+      }
       this.labels.update(
         this.renderer.camera,
         this.canvas?.clientWidth || 1,

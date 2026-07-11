@@ -20,6 +20,7 @@ export interface LabelLayer {
   setHovered: (slug: string | null) => void;
   setSelected: (slug: string | null) => void;
   setFilteredOut: (slugs: Set<string> | null) => void;
+  setKeepOut: (rect: DOMRect | null) => void;
   update: (camera: PerspectiveCamera, width: number, height: number) => void;
   dispose: () => void;
 }
@@ -57,6 +58,7 @@ export function buildLabelLayer(nodes: SceneNode[]): LabelLayer {
   let hoveredSlug: string | null = null;
   let selectedSlug: string | null = null;
   let filteredOut: Set<string> | null = null;
+  let keepOut: DOMRect | null = null;
   const projected = new Vector3Impl();
   const occupied = new Set<string>();
 
@@ -70,6 +72,12 @@ export function buildLabelLayer(nodes: SceneNode[]): LabelLayer {
     },
     setFilteredOut(slugs: Set<string> | null) {
       filteredOut = slugs;
+    },
+    setKeepOut(rect: DOMRect | null) {
+      // The hero copy overlays the map on the home page; labels that project
+      // inside its bounds collide with the reading text (WC03/WC10). A
+      // selected label still shows so the visitor never loses their focus.
+      keepOut = rect;
     },
     update(camera: PerspectiveCamera, width: number, height: number) {
       occupied.clear();
@@ -96,6 +104,23 @@ export function buildLabelLayer(nodes: SceneNode[]): LabelLayer {
         const x = (projected.x * 0.5 + 0.5) * width;
         const y = (-projected.y * 0.5 + 0.5) * height;
         if (x < -80 || x > width + 80 || y < -40 || y > height + 40) {
+          entry.el.style.display = 'none';
+          continue;
+        }
+
+        // Hero keep-out: hide labels that fall inside the hero copy, unless
+        // this is the selected node (the visitor asked for it). Labels anchor
+        // at (x, y) and extend right and down, so an anchor up to one label
+        // width left of the text still collides: inflate the test by a
+        // label's extent on the left and top.
+        if (
+          keepOut &&
+          !isSelected &&
+          x >= keepOut.left - 160 &&
+          x <= keepOut.right + 8 &&
+          y >= keepOut.top - 22 &&
+          y <= keepOut.bottom + 8
+        ) {
           entry.el.style.display = 'none';
           continue;
         }

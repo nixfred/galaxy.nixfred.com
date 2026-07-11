@@ -368,6 +368,7 @@ const sectors = sectorsSchema
       controller = new GalaxyController();
       await controller.init(canvas, {
         labelHost,
+        keepOutEl: document.querySelector<HTMLElement>('.shell'),
         reducedMotion: reducedMotionQuery.matches,
         onStateChange: (state: MapState) => {
           stage.dataset.mapState = state;
