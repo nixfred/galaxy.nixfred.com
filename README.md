@@ -1,3 +1,7 @@
+<div align="center">
+
+<img src="public/og/default.png" alt="NixFred Galaxy star map connecting projects across six colored sectors" width="100%">
+
 # NIXFRED GALAXY
 
 **Every project. One connected system.**
@@ -15,6 +19,8 @@ An interactive star map of [Fred Nix](https://nixfred.com)'s complete public bod
 [![Three.js](https://img.shields.io/badge/WebGL-Three.js-white)](https://threejs.org)
 [![Cloudflare Pages](https://img.shields.io/badge/deploy-Cloudflare_Pages-F38020)](https://pages.cloudflare.com)
 
+</div>
+
 ---
 
 ## What this is
@@ -31,6 +37,8 @@ A cyber observatory built inside a terminal. Not a portfolio grid with stars pas
 
 Every visitor gets there: keyboard only, screen reader, reduced motion, WebGL-less, or on a phone. The canvas is never the only path to the work.
 
+<img src="assets/readme/map-language.svg" alt="Visual legend showing that star size encodes importance, brightness encodes status, color encodes sector, and lines encode relationships" width="100%">
+
 ## The experience, in one flow
 
 ```
@@ -45,6 +53,14 @@ NIXFRED GALAXY // CATALOG ONLINE
    ATLAS         ->  the complete HTML catalog, always one action away
    SURPRISE ME   ->  seeded discovery, never repeats in a session
 ```
+
+<img src="assets/readme/explore-modes.svg" alt="Four exploration modes: interactive map, command palette search, guided tours, and accessible HTML Atlas" width="100%">
+
+## Two equal paths to every project
+
+The interactive Galaxy and semantic HTML Atlas are generated from the same validated graph. The canvas adds spatial exploration; it never owns information that the keyboard-driven, screen-reader-friendly Atlas cannot reach.
+
+<img src="assets/readme/accessibility-twin.svg" alt="Interactive Three.js Galaxy and semantic HTML Atlas connected to the same validated project graph" width="100%">
 
 ## Architecture
 
@@ -81,6 +97,8 @@ Full detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and five [ADRs](docs/a
 ## The CI/CD showcase
 
 This repository is deliberately a public demonstration of disciplined trunk based delivery. Development pushes directly to `main`; the pipeline, not a merge button, is the quality gate.
+
+<img src="assets/readme/artifact-integrity.svg" alt="Delivery pipeline validating, building once, recording a digest, deploying the exact artifact, and verifying production" width="100%">
 
 | Workflow | Job | Privilege discipline |
 |----------|-----|---------------------|
